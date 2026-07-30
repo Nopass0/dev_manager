@@ -43,14 +43,29 @@
 
 - 🚀 **Оркестрация процессов** — запуск всех микросервисов с очередью (`order`)
   и задержками (`delay_ms`), гарантированное убийство всего дерева подпроцессов
-  при остановке/перезапуске.
+  при остановке/перезапуске. **Лимиты памяти** (`resources.memory_mb`) с
+  мониторингом: уведомление или kill при превышении.
 - 📜 **Единая консоль логов** — цветные префиксы `[service]`, уровни `OUT/ERR/SYS`.
 - 🧬 **Гибкий конфиг** — наследование (`extends`), окружения (`dm.<env>.yaml` +
   `--env`/`DM_ENV`), интерполяция `{{var}}`/`${VAR}`, глобальные `defaults:`,
   профили и теги, `only_on:` фильтр по окружениям.
+- 🏗 **Шаблоны проектов** — `dm init --template=bun-elysia` создаёт готовый
+  backend/frontend с рабочим health-эндпоинтом. 7 встроенных шаблонов
+  (Bun/Elysia, Bun/Express, Go, Rust/axum, Next.js/shadcn, React/Vite, Python/FastAPI).
 - 🔄 **Hot reload** — watcher отслеживает файлы и перезапусвает нужный сервис.
 - 🔧 **Git-автоматизация** — `dm commit` (multi-repo), `dm commit auto` (сообщение
   из изменённых символов через tree-sitter), `dm git stash/branch/rebase` (cross-repo),
+  conventional commits + авто-CHANGELOG, semver bump.
+- 🗄 **БД и Docker** — `dm db migrate/seed/reset/shell` и `dm docker up/down/logs/ps`.
+- 📦 **Единый `.env`** — переменные с секциями `[service]` раскидываются по сервисам.
+- 🔍 **Анализ кода** — DRY/KISS/дубликаты/unused + `dm grep/replace/refs/secrets`,
+  `dm gen diagram` (Mermaid из графа импортов), `dm todo` (реестр TODO/FIXME).
+- 🔔 **Уведомления** — webhook (Slack/Telegram/Discord) + desktop **toast**
+  (auto-dismiss, не модальные message-box'ы) о крэшах/тестах/превышении лимитов.
+- 🌐 **Деплой по SSH** — цели с триггерами `manual`/`after_commit`/`after_push`.
+- 🪟🐧 **Кросс-платформенность** — Windows и Linux наравне; oneliner-установка с
+  автоматическим добавлением в PATH.
+
   conventional commits + авто-CHANGELOG.
 - 🗄 **БД и Docker** — `dm db migrate/seed/reset/shell` и `dm docker up/down/logs/ps`.
 - 📦 **Единый `.env`** — переменные с секциями `[service]` раскидываются по сервисам.
@@ -67,22 +82,22 @@
 
 ### Windows (PowerShell)
 ```powershell
-iwr -useb https://raw.githubusercontent.com/your-org/dev_manager/main/scripts/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.ps1 | iex
 ```
 
 ### Linux / macOS
 ```sh
-curl -fsSL https://raw.githubusercontent.com/your-org/dev_manager/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.sh | sh
 ```
 
 Оба скрипта скачивают бинарник под архитектуру вашей ОС, распаковывают его и
 **добавляют каталог в PATH** (постоянно). После установки перезапустите терминал.
 
-> ⚠️ Замените `your-org/dev_manager` на реальный путь репозитория после публикации.
+> ⚠️ Замените `Nopass0/dev_manager` на реальный путь репозитория после публикации.
 
 ### Из исходников (для разработки)
 ```sh
-git clone https://github.com/your-org/dev_manager
+git clone https://github.com/Nopass0/dev_manager
 cd dev_manager
 cargo build --release      # бинарник: target/release/dm
 cargo install --path crates/dm-cli   # установить в ~/.cargo/bin
@@ -116,6 +131,61 @@ dm push                      # пуш каждого репо в свой origin
 dm lint                      # DRY/KISS/unused/duplicates
 dm test                      # тесты сервисов
 ```
+
+## 🏗 Шаблоны проектов (`dm init --template=...`)
+
+Создайте готовый проект одной командой — с рабочим health-эндпоинтом,
+структурой каталогов и автозаписью в `dm.yaml`:
+
+```sh
+# Список доступных шаблонов:
+dm init --list-templates
+
+# Создать backend на Bun + Elysia в текущем каталоге:
+dm init --template=bun-elysia --name=myapi
+dm setup && dm start    # → http://localhost:3000/health
+
+# Или фронтенд на Next.js + shadcn/ui:
+dm init --template=next-shadcn --name=myapp
+```
+
+| Шаблон | Стек | Порт |
+|---|---|---|
+| `bun-elysia` | Bun + Elysia (TS, hot-reload) | 3000 |
+| `bun-express` | Bun + Express (TS) | 3000 |
+| `go-api` | Go (net/http) | 8080 |
+| `rust-axum` | Rust + axum | 8080 |
+| `python-fastapi` | Python + FastAPI (uvicorn) | 8000 |
+| `next-shadcn` | Next.js + shadcn/ui + Tailwind + Lucide | 3000 |
+| `react-vite` | React + Vite + Tailwind + Lucide | 5173 |
+
+### Добавление нового сервиса в существующий проект
+
+```sh
+# Создаёт ./auth с готовым кодом + АВТОдобавлением в dm.yaml:
+dm new service auth --template=rust-axum
+# → services/auth/ с рабочим /health эндпоинтом
+# → запись в dm.yaml с правильным path: ./auth
+```
+
+## Лимиты ресурсов процесса
+
+Контролируйте прожорливые сервисы. В `dm.yaml`:
+
+```yaml
+services:
+  ml:
+    path: ./services/ml
+    language: python
+    resources:
+      memory_mb: 512          # лимит ОЗУ
+      on_exceed: notify       # notify (по умолчанию) или kill
+```
+
+При превышении `dm` шлёт toast-уведомление (Windows) / `notify-send` (Linux)
+и, при `on_exceed: kill`, — перезапускает сервис.
+
+---
 
 ## Готовые примеры проектов
 

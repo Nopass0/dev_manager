@@ -37,22 +37,22 @@ changes. Git, tests, linters and deploy — also through `dm`.
 
 ### Windows (PowerShell)
 ```powershell
-iwr -useb https://raw.githubusercontent.com/your-org/dev_manager/main/scripts/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.ps1 | iex
 ```
 
 ### Linux / macOS
 ```sh
-curl -fsSL https://raw.githubusercontent.com/your-org/dev_manager/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.sh | sh
 ```
 
 Both scripts download the right binary for your OS/arch, extract it and **add
 its directory to PATH** (persistently). Restart your terminal afterwards.
 
-> ⚠️ Replace `your-org/dev_manager` with the real repository path after publishing.
+> ⚠️ Replace `Nopass0/dev_manager` with the real repository path after publishing.
 
 ### From source (for development)
 ```sh
-git clone https://github.com/your-org/dev_manager
+git clone https://github.com/Nopass0/dev_manager
 cd dev_manager
 cargo build --release      # binary: target/release/dm
 cargo install --path crates/dm-cli   # install to ~/.cargo/bin

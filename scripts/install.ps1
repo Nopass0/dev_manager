@@ -2,7 +2,7 @@
 #  Dev Manager (`dm`) — oneliner-установщик для Windows (PowerShell).
 #
 #  Запуск:
-#    iwr -useb https://raw.githubusercontent.com/your-org/dev_manager/main/scripts/install.ps1 | iex
+#    iwr -useb https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.ps1 | iex
 #
 #  Что делает:
 #    1. Скачивает dm-<arch>-pc-windows-msvc.zip с последнего релиза GitHub.
@@ -13,7 +13,7 @@
 $ErrorActionPreference = 'Stop'
 
 # Замените на ваш owner/repo перед публикацией.
-$Repo = "your-org/dev_manager"
+$Repo = "Nopass0/dev_manager"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\dm'
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null

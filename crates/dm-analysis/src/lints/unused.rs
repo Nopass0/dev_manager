@@ -22,6 +22,12 @@ pub fn find_unused(symbols: &[Symbol], corpus: &[String]) -> Vec<LintFinding> {
         if s.name.len() < 2 {
             continue;
         }
+        // Точки входа и тесты никогда не «вызываются» явно — не флагаем их.
+        // `main` — точка входа (Rust/C/Go), `Test*`/`test_*` — тесты (Go/Rust/Python),
+        // `setUp`/`tearDown` — фикстуры pytest/JUnit.
+        if is_entry_point_or_test(&s.name) {
+            continue;
+        }
         // corpus — это текст ВСЕХ файлов проекта, включая определяющий символ.
         // Символ считается использованным, если его имя встречается хотя бы
         // дважды (определение + хотя бы одно использование). Один раз имя
@@ -41,6 +47,31 @@ pub fn find_unused(symbols: &[Symbol], corpus: &[String]) -> Vec<LintFinding> {
         }
     }
     out
+}
+
+/// Возвращает true для точек входа и тестовых функций, которые никогда явно
+/// не вызываются (поэтому эвристика «unused» даёт на них false positive).
+///
+/// Покрывает:
+/// - `main` — точка входа (Rust/C/Go);
+/// - `Test*` — Go/JS тесты;
+/// - `test_*` / `tests` — Rust/Python тесты;
+/// - `setUp`/`tearDown`/`beforeEach`/`afterEach` — фикстуры.
+fn is_entry_point_or_test(name: &str) -> bool {
+    if name == "main" || name == "Main" {
+        return true;
+    }
+    // Test* — Go/JS convention (TestHealthStatus, testSomething в lowerCamel).
+    if name.starts_with("Test") || name.starts_with("test") {
+        return true;
+    }
+    // Фикстуры.
+    matches!(
+        name,
+        "setUp" | "tearDown" | "setup" | "teardown"
+            | "beforeEach" | "afterEach" | "beforeAll" | "afterAll"
+            | "before_each" | "after_each" | "before_all" | "after_all"
+    )
 }
 
 /// Вспомогательная функция: собирает множество всех имён символов.
@@ -82,5 +113,26 @@ mod tests {
             "let x = used();".to_string(), // использование
         ];
         assert!(find_unused(&syms, &corpus).is_empty());
+    }
+
+    #[test]
+    fn does_not_flag_main_and_tests() {
+        let syms = vec![
+            Symbol::new("main", SymbolKind::Function, PathBuf::from("a.rs"), 1),
+            Symbol::new("TestHealth", SymbolKind::Function, PathBuf::from("a_test.go"), 1),
+            Symbol::new("setUp", SymbolKind::Function, PathBuf::from("a.py"), 1),
+        ];
+        // Все три — точки входа/тесты, corpus пустой, но флагаться не должны.
+        assert!(find_unused(&syms, &[]).is_empty());
+    }
+
+    #[test]
+    fn entry_point_detection() {
+        assert!(is_entry_point_or_test("main"));
+        assert!(is_entry_point_or_test("TestHealthStatus"));
+        assert!(is_entry_point_or_test("test_parse"));
+        assert!(is_entry_point_or_test("setUp"));
+        assert!(!is_entry_point_or_test("parse"));
+        assert!(!is_entry_point_or_test("UserService"));
     }
 }

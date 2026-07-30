@@ -255,6 +255,22 @@ pub enum ConfigAction {
     Validate,
 }
 
+/// Аргументы `dm init`.
+#[derive(Debug, Clone, clap::Args)]
+pub struct InitArgs {
+    /// Создать проект из шаблона (без = только dm.yaml).
+    /// Доступно: bun-elysia, bun-express, go-api, rust-axum, next-shadcn,
+    /// react-vite, python-fastapi. Список: `dm init --list-templates`.
+    #[arg(long)]
+    pub template: Option<String>,
+    /// Показать список доступных шаблонов и выйти.
+    #[arg(long)]
+    pub list_templates: bool,
+    /// Имя проекта/сервиса для шаблона (по умолчанию — имя каталога).
+    #[arg(long)]
+    pub name: Option<String>,
+}
+
 /// Аргументы `dm new`.
 #[derive(Debug, Clone, clap::Args)]
 pub struct NewArgs {
@@ -262,9 +278,12 @@ pub struct NewArgs {
     pub kind: String,
     /// Имя.
     pub name: String,
-    /// Язык: rust|go|typescript|vite|... (только для service).
+    /// Язык: rust|go|typescript|vite|... (совместимо со старым синтаксисом).
     #[arg(long)]
     pub lang: Option<String>,
+    /// Шаблон сервиса: bun-elysia, go-api, rust-axum и т.д. (приоритет над --lang).
+    #[arg(long)]
+    pub template: Option<String>,
 }
 
 /// Аргументы `dm git` (cross-repo операции).

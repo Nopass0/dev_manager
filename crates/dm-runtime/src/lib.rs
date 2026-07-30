@@ -12,6 +12,7 @@
 //! - [`watcher`] — debounced-наблюдение за файлами для hot reload.
 
 pub mod logs;
+pub mod monitor;
 pub mod notify;
 pub mod process;
 pub mod spawn_strategy;
@@ -19,6 +20,7 @@ pub mod supervisor;
 pub mod watcher;
 
 pub use logs::{LogLevel, LogLine, ServiceStatus};
+pub use monitor::{check_memory, rss_mb, MemoryCheck};
 pub use notify::{NotifyConfig, NotifyEvent};
 pub use process::{ManagedProcess, ProcessExit};
 pub use supervisor::{Supervisor, SupervisorOptions};

@@ -14,5 +14,6 @@ pub use loader::{
 pub use schema::{
     Config, DatabaseConfig, DatabaseConnection, DeployTrigger, DeployTarget, DockerConfig,
     HealthCheckConfig, HealthCheckKind, LogsConfig, LinterConfig, ProfileConfig,
-    ResourceLimits, RestartBehavior, RestartPolicy, RuntimeConfig, ServiceConfig, TestsConfig,
+    ResourceAction, ResourceLimits, RestartBehavior, RestartPolicy, RuntimeConfig,
+    ServiceConfig, TestsConfig,
 };

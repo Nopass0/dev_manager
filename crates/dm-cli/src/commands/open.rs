@@ -16,7 +16,7 @@ pub async fn run(args: OpenArgs) -> DmResult<()> {
     let url = match target {
         "docs" => {
             // Открываем корневой README (если docs есть — оглавление).
-            "https://github.com/your-org/dev_manager/tree/main/docs/ru".to_string()
+            "https://github.com/Nopass0/dev_manager/tree/main/docs/ru".to_string()
         }
         svc if std::path::Path::new(svc).exists() || is_url(svc) => svc.to_string(),
         svc => {

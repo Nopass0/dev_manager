@@ -11,12 +11,12 @@ go-monorepo/
 ├── dm.yaml
 ├── go.work              ← Go workspace (go 1.22+, мульти-модульный monorepo)
 ├── shared/              ← общая библиотека
-│   ├── go.mod           ← module github.com/your-org/shared
+│   ├── go.mod           ← module github.com/Nopass0/shared
 │   └── auth.go
 └── services/
     ├── api/             ← HTTP API, порт 8080
-    │   ├── go.mod       ← module github.com/your-org/api
-    │   └── main.go      ← import "github.com/your-org/shared"
+    │   ├── go.mod       ← module github.com/Nopass0/api
+    │   └── main.go      ← import "github.com/Nopass0/shared"
     └── worker/          ← фоновый обработчик
         ├── go.mod
         └── main.go

@@ -6,7 +6,7 @@
 
 ### Windows (PowerShell)
 ```powershell
-iwr -useb https://raw.githubusercontent.com/your-org/dev_manager/main/scripts/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.ps1 | iex
 ```
 Скрипт скачивает `dm-x86_64-pc-windows-msvc.zip`, распаковывает в
 `%LOCALAPPDATA%\Programs\dm` и добавляет каталог в пользовательский `PATH`
@@ -14,7 +14,7 @@ iwr -useb https://raw.githubusercontent.com/your-org/dev_manager/main/scripts/in
 
 ### Linux / macOS
 ```sh
-curl -fsSL https://raw.githubusercontent.com/your-org/dev_manager/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.sh | sh
 ```
 Скрипт определяет архитектуру (`x86_64`/`aarch64`), скачивает
 `dm-<arch>-<os>.tar.gz`, распаковывает `dm` в `~/.local/bin` и при необходимости
@@ -26,12 +26,12 @@ curl -fsSL https://raw.githubusercontent.com/your-org/dev_manager/main/scripts/i
 dm version
 ```
 
-> ⚠️ Замените `your-org/dev_manager` на реальный путь репозитория после публикации.
+> ⚠️ Замените `Nopass0/dev_manager` на реальный путь репозитория после публикации.
 
 ## Из исходников
 
 ```sh
-git clone https://github.com/your-org/dev_manager
+git clone https://github.com/Nopass0/dev_manager
 cd dev_manager
 cargo build --release          # бинарник: target/release/dm
 cargo install --path crates/dm-cli   # установить в ~/.cargo/bin (уже в PATH)

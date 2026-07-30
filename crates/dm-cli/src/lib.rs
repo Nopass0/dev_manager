@@ -10,6 +10,7 @@ pub mod commands;
 pub mod output;
 pub mod select;
 pub mod shell;
+pub mod templates;
 
 use clap::{Parser, Subcommand};
 use dm_core::DmResult;
@@ -37,8 +38,8 @@ pub struct Cli {
 /// Все поддерживаемые подкоманды `dm`.
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Создать новый `dm.yaml` в текущем каталоге.
-    Init,
+    /// Создать dm.yaml и/или проект из шаблона.
+    Init(commands::InitArgs),
     /// Запустить все сервисы (с watcher/hot-reload).
     Start(commands::StartArgs),
     /// Остановить все сервисы (если запущены через `dm start`).
@@ -163,7 +164,7 @@ pub async fn run(cli: Cli) -> DmResult<()> {
         unsafe { std::env::set_var(dm_core::config::DM_ENV_VAR, env); }
     }
     match cli.command {
-        Command::Init => commands::init::run().await,
+        Command::Init(args) => commands::init::run(args).await,
         Command::Start(args) => commands::start::run(args).await,
         Command::Stop => commands::stop::run().await,
         Command::Restart { name } => commands::restart::run(&name).await,

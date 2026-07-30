@@ -81,7 +81,23 @@ pub async fn run(args: StartArgs) -> DmResult<()> {
     // before_start хуки для каждого сервиса (выполняются до запуска процесса).
     run_before_start_hooks(&config, &selected, &root).await;
 
+    // Устанавливаем лимиты ресурсов для сервисов (для monitor'а).
+    for name in &selected {
+        if let Some(svc) = config.services.get(name) {
+            if let Some(res) = &svc.resources {
+                if res.memory_mb > 0 {
+                    supervisor
+                        .set_resource_limits(name, res.memory_mb, res.on_exceed)
+                        .await;
+                }
+            }
+        }
+    }
+
     supervisor.start_all().await?;
+
+    // Запускаем мониторинг ресурсов (RSS памяти) раз в 5 секунд.
+    supervisor.start_resource_monitor(5);
 
     // Фоновая печать логов до сигнала остановки.
     let printer = tokio::spawn(async move {

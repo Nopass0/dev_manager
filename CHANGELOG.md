@@ -3,6 +3,34 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [0.7.0] — 2026-07-30
+
+### 🏗 Шаблоны проектов
+- **`dm init --template=<name>`** — создание готового проекта одной командой с
+  рабочим health-эндпоинтом, структурой и автозаписью в dm.yaml.
+- **7 встроенных шаблонов**: bun-elysia, bun-express, go-api, rust-axum,
+  python-fastapi, next-shadcn, react-vite.
+- **`dm init --list-templates`** — список доступных шаблонов.
+- **`dm new service <name> --template=`** — добавление сервиса с автозаписью
+  правильного `path: ./<name>` в dm.yaml.
+
+### 🧮 Лимиты ресурсов
+- **`resources.memory_mb`** + **`resources.on_exceed: notify|kill`** — мониторинг
+  RSS процесса (кросс-платформенно: /proc на Linux, wmic на Windows, ps на macOS).
+- При превышении — toast-уведомление; при `kill` — перезапуск сервиса.
+- Модуль `dm-runtime/monitor` с `check_memory`/`rss_mb`.
+
+### 🔔 Уведомления (Windows UX)
+- **Toast-уведомления** (BurntToast → BalloonNotify fallback) вместо модального
+  `msg`. Появляются сбоку и **исчезают сами** — не требуют закрытия кнопкой.
+
+### 🐛 Качество
+- Unused-линтер больше не флагает точки входа (`main`) и тесты (`Test*`, `test_*`,
+  `setUp`/`tearDown` и фикстуры).
+- `dm` без аргументов показывает help вместо ошибки.
+- `.gitattributes` (LF) убирает CRLF-warnings в git на Windows.
+- Oneliner-скрипты указывают на актуальный репозиторий `Nopass0/dev_manager`.
+
 ## [0.6.0] — 2026-07-29
 
 ### ✨ Команды для ускорения разработки

@@ -22,9 +22,9 @@ multi-repo/
 
 ```sh
 mkdir -p repos && cd repos
-git clone git@github.com:your-org/auth.git
-git clone git@github.com:your-org/billing.git
-git clone git@github.com:your-org/gateway.git
+git clone git@github.com:Nopass0/auth.git
+git clone git@github.com:Nopass0/billing.git
+git clone git@github.com:Nopass0/gateway.git
 cd ..
 ```
 

@@ -6,7 +6,7 @@
 
 ### Windows (PowerShell)
 ```powershell
-iwr -useb https://raw.githubusercontent.com/your-org/dev_manager/main/scripts/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.ps1 | iex
 ```
 The script downloads `dm-x86_64-pc-windows-msvc.zip`, extracts it to
 `%LOCALAPPDATA%\Programs\dm` and adds the directory to the user `PATH`
@@ -14,7 +14,7 @@ The script downloads `dm-x86_64-pc-windows-msvc.zip`, extracts it to
 
 ### Linux / macOS
 ```sh
-curl -fsSL https://raw.githubusercontent.com/your-org/dev_manager/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.sh | sh
 ```
 The script detects the architecture (`x86_64`/`aarch64`), downloads
 `dm-<arch>-<os>.tar.gz`, extracts `dm` to `~/.local/bin` and, if needed, appends
@@ -25,12 +25,12 @@ After installing, **restart your terminal** and verify:
 dm version
 ```
 
-> ⚠️ Replace `your-org/dev_manager` with the real repository path after publishing.
+> ⚠️ Replace `Nopass0/dev_manager` with the real repository path after publishing.
 
 ## From source
 
 ```sh
-git clone https://github.com/your-org/dev_manager
+git clone https://github.com/Nopass0/dev_manager
 cd dev_manager
 cargo build --release          # binary: target/release/dm
 cargo install --path crates/dm-cli   # install to ~/.cargo/bin (already on PATH)

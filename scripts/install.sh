@@ -3,7 +3,7 @@
 #  Dev Manager (`dm`) — oneliner-установщик для Linux / macOS.
 #
 #  Запуск:
-#    curl -fsSL https://raw.githubusercontent.com/your-org/dev_manager/main/scripts/install.sh | sh
+#    curl -fsSL https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.sh | sh
 #
 #  Что делает:
 #    1. Определяет ОС и архитектуру.
@@ -15,7 +15,7 @@
 set -e
 
 # Замените на ваш owner/repo перед публикацией.
-REPO="your-org/dev_manager"
+REPO="Nopass0/dev_manager"
 
 OS="$(uname -s)"
 ARCH="$(uname -m)"

@@ -8,7 +8,7 @@
 ///
 /// Замените на реальные значения перед публикацией. Скрипты ниже подставляют
 /// это значение в URL загрузки.
-pub const DEFAULT_REPO: &str = "your-org/dev_manager";
+pub const DEFAULT_REPO: &str = "Nopass0/dev_manager";
 
 /// Возвращает bash-скрипт установки (Linux/macOS).
 ///

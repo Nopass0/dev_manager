@@ -291,9 +291,23 @@ pub struct ResourceLimits {
     /// Максимум CPU в процентах (0 = без лимита). Windows Job Objects / cgroups.
     #[serde(default)]
     pub cpu_percent: u32,
-    /// Максимум ОЗУ в мегабайтах (0 = без лимита).
+    /// Максимум ОЗУ в мегабайтах (0 = без лимита). Мониторится watcher'ом.
     #[serde(default)]
     pub memory_mb: u64,
+    /// Что делать при превышении memory_mb: `notify` (по умолчанию) или `kill`.
+    #[serde(default)]
+    pub on_exceed: ResourceAction,
+}
+
+/// Действие при превышении лимита ресурсов.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ResourceAction {
+    /// Только уведомить (webhook/desktop), процесс не трогать.
+    #[default]
+    Notify,
+    /// Убить процесс (supervisor перезапустит, если включён restart).
+    Kill,
 }
 
 /// Конфигурация health-check для сервиса.

@@ -30,12 +30,11 @@ enum FileKind {
     Test,
 }
 
-/// `dm new service <name> --lang=` — скаффолд нового сервиса.
+/// `dm new service <name> [--template=...] [--lang=...]` — скаффолд нового сервиса.
+///
+/// Приоритет: `--template` (полный шаблон с эндпоинтом) > `--lang` (минимальный скелет).
+/// Сервис автоматически добавляется в dm.yaml (создаётся, если отсутствует).
 async fn run_service(args: crate::commands::NewArgs) -> DmResult<()> {
-    let lang_str = args.lang.as_deref().unwrap_or("rust");
-    let lang = parse_language(lang_str)
-        .ok_or_else(|| dm_core::DmError::invalid_config(format!("неизвестный язык '{lang_str}'")))?;
-
     let cwd = std::env::current_dir()?;
     let target = cwd.join(&args.name);
     if target.exists() {
@@ -44,6 +43,41 @@ async fn run_service(args: crate::commands::NewArgs) -> DmResult<()> {
         )));
     }
     std::fs::create_dir_all(&target)?;
+
+    // Маршрут 1: --template (полный рабочий шаблон).
+    if let Some(template_name) = &args.template {
+        let template = crate::templates::find(template_name).ok_or_else(|| {
+            let available: Vec<&str> = crate::templates::all_templates()
+                .iter()
+                .map(|t| t.name)
+                .collect();
+            dm_core::DmError::invalid_config(format!(
+                "шаблон '{template_name}' не найден. Доступно: [{}].",
+                available.join(", ")
+            ))
+        })?;
+        let created = crate::templates::apply(&template, &target, &args.name)?;
+        println_styled(
+            &format!("  ✓ сервис '{}' [{}] из шаблона '{}'", args.name, template.language, template.name),
+            success_style(),
+        );
+        for f in &created {
+            println_styled(&format!("    {}", f.strip_prefix(&cwd).unwrap_or(f).display()), crate::output::dim_style());
+        }
+        // Добавляем в dm.yaml с правильным путём ./<name>.
+        let svc_entry = crate::commands::init::build_service_yaml_with_path(
+            &args.name,
+            &format!("./{}", args.name),
+            &template,
+        );
+        crate::commands::init::upsert_dm_yaml(&cwd, &svc_entry)?;
+        return Ok(());
+    }
+
+    // Маршрут 2: --lang (минимальный скелет).
+    let lang_str = args.lang.as_deref().unwrap_or("rust");
+    let lang = parse_language(lang_str)
+        .ok_or_else(|| dm_core::DmError::invalid_config(format!("неизвестный язык '{lang_str}'")))?;
     scaffold(&target, &args.name, lang)?;
     println_styled(&format!("  ✓ создан сервис '{}' [{}]", args.name, lang.label()), success_style());
 

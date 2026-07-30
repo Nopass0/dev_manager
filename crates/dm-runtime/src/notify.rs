@@ -113,11 +113,15 @@ async fn send_webhook(url: &str, title: &str, detail: &str) {
 }
 
 /// Desktop-уведомление через системную утилиту.
+///
+/// На Windows использует toast-уведомления (BurntToast PowerShell-модуль, если
+/// установлен, иначе BalloonNotify). Эти уведомления появляются сбоку и
+/// исчезают сами — без модального message-box, который требует закрытия.
 fn send_desktop(title: &str, body: &str) -> std::io::Result<()> {
     #[cfg(target_os = "linux")]
     {
         std::process::Command::new("notify-send")
-            .args([title, body])
+            .args(["--icon=dialog-information", title, body])
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())
@@ -132,12 +136,48 @@ fn send_desktop(title: &str, body: &str) -> std::io::Result<()> {
     }
     #[cfg(windows)]
     {
-        // msg.exe — простейшее, доступно на большинстве сборок.
-        let _ = std::process::Command::new("msg")
-            .args(["*", &format!("{title}: {body}")])
-            .status();
+        windows_toast(title, body);
     }
     Ok(())
+}
+
+/// Windows toast-уведомление: BurntToast (если установлен) → BalloonNotify fallback.
+///
+/// Оба способа показывают уведомление в Action Center сбоку, которое исчезает
+/// само через несколько секунд. Не требует закрытия кнопкой, в отличие от `msg`.
+#[cfg(windows)]
+fn windows_toast(title: &str, body: &str) {
+    // Экранируем одинарные кавычки для PowerShell.
+    let t = title.replace('\'', "''");
+    let b = body.replace('\'', "''");
+
+    // Попытка 1: BurntToast (красивые toast-уведомления, если модуль установлен).
+    let burnt = format!(
+        "try {{ New-BurntToastNotification -Title '{t}' -Text '{b}' -AppLogo none }} catch {{ exit 1 }}"
+    );
+    let ok = std::process::Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-Command", &burnt])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+    if ok {
+        return;
+    }
+
+    // Попытка 2: BalloonNotify через NotifyIcon (без внешних модулей).
+    // Это встроенный toast, который появляется в трее и исчезает сам.
+    let balloon = format!(
+        r#"[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null; $n = New-Object System.Windows.Forms.NotifyIcon; $n.Icon = [System.Drawing.SystemIcons]::Information; $n.Visible = $true; $n.ShowBalloonTip(5000, '{t}', '{b}', [System.Windows.Forms.ToolTipIcon]::Info); Start-Sleep -Seconds 6; $n.Dispose()"#
+    );
+    let _ = std::process::Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-Command", &balloon])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status();
 }
 
 /// Простой URL-парсер для webhook.

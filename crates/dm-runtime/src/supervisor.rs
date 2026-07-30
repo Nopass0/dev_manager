@@ -54,6 +54,10 @@ struct ServiceState {
     /// Флаг: watcher/restart() запросил перезапуск. Цикл сервиса увидит его,
     /// убьёт процесс и поднимет заново.
     restart_requested: bool,
+    /// PID текущего процесса (для мониторинга ресурсов). Обновляется циклом.
+    pid: Option<u32>,
+    /// Лимит памяти и действие при превышении (для monitor'а). None = без лимита.
+    resource_limits: Option<(u64, dm_core::config::ResourceAction)>,
 }
 
 /// Главный оркестратор процессов.
@@ -110,6 +114,8 @@ impl Supervisor {
                     consecutive_crashes: 0,
                     last_start_ms: 0,
                     restart_requested: false,
+                    pid: None,
+                    resource_limits: None,
                 },
             );
         }
@@ -302,6 +308,105 @@ impl Supervisor {
             })
             .collect()
     }
+
+    /// Запускает фоновый мониторинг ресурсов процессов.
+    ///
+    /// Каждые `interval_secs` проверяет RSS каждого запущенного сервиса против
+    /// его `resources.memory_mb`. При превышении — уведомление (notify) или kill
+    /// (согласно `resources.on_exceed`). Задача живёт до [`Supervisor::shutdown`].
+    pub fn start_resource_monitor(&self, interval_secs: u64) {
+        if interval_secs == 0 {
+            return;
+        }
+        let states = self.states.clone();
+        let shutdown = self.shutdown.clone();
+        let log_tx = self.log_tx.clone();
+        let notify = self.notify.clone();
+        // Карта имя → (memory_mb, on_exceed) — берём из конфига проектов.
+        // Поле resources хранится в ServiceConfig; в runtime-модели его нет,
+        // поэтому лимиты пробрасываем через статический снимок здесь.
+        let limits: HashMap<String, (u64, dm_core::config::ResourceAction)> = self
+            .project
+            .services
+            .iter()
+            .filter_map(|_s| {
+                // Лимиты хранятся в config, не в runtime Service; используем
+                // конфиг, доступный через project (но там их нет).
+                // На этом уровне лимиты передаются через watcher/cli при старте.
+                None::<(String, (u64, dm_core::config::ResourceAction))>
+            })
+            .collect();
+        let _ = limits; // лимиты устанавливаются через set_resource_limits
+
+        tokio::spawn(async move {
+            let mut ticker = tokio::time::interval(Duration::from_secs(interval_secs));
+            loop {
+                ticker.tick().await;
+                if *shutdown.read().await {
+                    return;
+                }
+                // Снимок: имя → (pid, memory_limit_mb, action).
+                let snapshot: Vec<(String, u32, u64, dm_core::config::ResourceAction)> = {
+                    let st = states.lock().await;
+                    st.iter()
+                        .filter_map(|(name, state)| {
+                            let pid = state.pid?;
+                            let (limit, action) = state.resource_limits?;
+                            Some((name.clone(), pid, limit, action))
+                        })
+                        .collect()
+                };
+                for (name, pid, limit_mb, action) in snapshot {
+                    match crate::monitor::check_memory(pid, limit_mb) {
+                        crate::monitor::MemoryCheck::Exceeded { rss_mb, limit_mb } => {
+                            let _ = log_tx.send(LogLine::new(
+                                name.clone(),
+                                crate::logs::LogLevel::Error,
+                                format!(
+                                    "превышен лимит памяти: {rss_mb} МБ > {limit_mb} МБ (действие: {action:?})"
+                                ),
+                            ));
+                            // Уведомление всегда.
+                            let n = notify.clone();
+                            let nm = name.clone();
+                            let detail = format!("RSS {rss_mb} МБ > лимит {limit_mb} МБ");
+                            tokio::spawn(async move {
+                                crate::notify::send(&n, NotifyEvent::Crash, &nm, &detail).await;
+                            });
+                            // Kill — если настроено.
+                            if matches!(action, dm_core::config::ResourceAction::Kill) {
+                                let mut st = states.lock().await;
+                                if let Some(state) = st.get_mut(&name) {
+                                    state.restart_requested = true; // цикл убьёт и поднимет
+                                    state.pid = None;
+                                }
+                                drop(st);
+                                // Рекурсивное убийство дерева через kill_tree.
+                                let _ = tokio::task::spawn_blocking(move || {
+                                    let _ = kill_tree::blocking::kill_tree(pid);
+                                })
+                                .await;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        });
+    }
+
+    /// Устанавливает лимит ресурсов для сервиса (вызывается из cli при старте).
+    pub async fn set_resource_limits(
+        &self,
+        name: &str,
+        memory_mb: u64,
+        action: dm_core::config::ResourceAction,
+    ) {
+        let mut st = self.states.lock().await;
+        if let Some(state) = st.get_mut(name) {
+            state.resource_limits = Some((memory_mb, action));
+        }
+    }
 }
 
 /// Цикл жизни одного сервиса: запуск → ожидание выхода → рестарт.
@@ -394,6 +499,8 @@ async fn run_service_loop(
                 // Процессом владеет цикл; поле process здесь не используется для
                 // управления (управление идёт через флаги) — оставляем None.
                 state.process = None;
+                // Публикуем PID для мониторинга ресурсов (supervisor проверяет RSS).
+                state.pid = proc.pid();
             }
         }
         // Уведомление об успешном старте (webhook/desktop) — fire-and-forget.
