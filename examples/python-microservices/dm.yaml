@@ -1,0 +1,64 @@
+# =============================================================================
+#  Пример: Python-микросервисы (FastAPI + Celery worker + Redis)
+# =============================================================================
+#  Python-стек: FastAPI как API, Celery worker для фоновых задач, Redis как
+#  брокер. Показывает автоопределение команд по файлам-маркерам и worktree.
+#
+#  Структура:
+#    python-microservices/
+#    ├── dm.yaml
+#    ├── .env
+#    ├── docker-compose.yml       ← redis
+#    └── services/
+#        ├── api/                 ← FastAPI (uvicorn), порт 8000
+#        │   ├── requirements.txt
+#        │   └── main.py
+#        └── worker/              ← Celery worker
+#            ├── requirements.txt
+#            └── tasks.py
+# =============================================================================
+
+version: 1
+project_name: python-platform
+env_file: .env
+
+services:
+  api:
+    path: ./services/api
+    language: python
+    run: "uvicorn main:app --reload --port 8000"   # авто-перезагрузка uvicorn
+    tags: [web]
+    order: 10
+    health:
+      kind: http
+      url: http://localhost:8000/health
+    tests:
+      cmd: pytest
+      on_change: true
+
+  worker:
+    path: ./services/worker
+    language: python
+    run: "celery -A tasks worker --loglevel=info"
+    tags: [background]
+    order: 20
+    depends_on: [api]
+
+defaults:
+  watch: true
+  restart_on_change: true
+
+# Redis как брокер для Celery — через compose.
+docker:
+  compose_file: docker-compose.yml
+  project_name: python-platform
+
+linter:
+  dr: true
+  kiss: true
+  unused_code: true
+  duplicates: true
+
+aliases:
+  up: "dm docker up && dm start"
+  rq: "redis-cli -h localhost -p 6379"   # шорткат в redis-cli

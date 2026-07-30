@@ -1,0 +1,104 @@
+# =============================================================================
+#  Пример: Fullstack-приложение (Rust API + Vite-фронтенд + Postgres + Redis)
+# =============================================================================
+#  Структура проекта:
+#    fullstack/
+#    ├── dm.yaml          ← этот файл
+#    ├── .env             ← единый .env (см. ниже)
+#    ├── docker-compose.yml
+#    ├── services/
+#    │   ├── api/         ← Rust (axum), порт 8080
+#    │   └── web/         ← Vite (React/TS), порт 5173
+#    └── migrations/      ← SQL-миграции БД
+#
+#  Запуск:  dm setup  →  dm start
+# =============================================================================
+
+version: 1
+project_name: fullstack-app
+env_file: .env
+
+# Глобальные настройки, наследуемые всеми сервисами (DRY).
+defaults:
+  watch: true
+  restart_on_change: true
+
+services:
+  api:
+    path: ./services/api
+    language: rust
+    tags: [backend]
+    order: 10                      # запускается первым
+    depends_on: []                 # не зависит от web
+    health:
+      kind: http
+      url: http://localhost:8080/health
+      warmup_secs: 3
+      interval_secs: 2
+      retries: 15
+    before_start:                  # миграции перед стартом
+      - dm db migrate
+    tests:
+      cmd: cargo test
+      on_change: true
+    logs:
+      enabled: true
+      level: info
+
+  web:
+    path: ./services/web
+    language: vite
+    tags: [frontend]
+    order: 20
+    delay_ms: 500                  # подождать, пока api поднимется
+    depends_on: [api]              # не стартует, пока api не здоров
+    health:
+      kind: tcp
+      port: 5173
+
+# Профили: разные наборы сервисов для разных задач.
+profiles:
+  full:
+    services: [api, web]
+    description: Полный стек (по умолчанию)
+  api-only:
+    services: [api]
+    description: Только бэкенд (фронтенд на staging)
+  infra:
+    services: []
+    description: Только инфра (docker compose)
+
+# БД: одна postgres-база, миграции в migrations/.
+database:
+  connections:
+    default:
+      kind: postgres
+      url: postgres://app:app@localhost:5432/app
+      migrations_dir: ./migrations
+      migrate_cmd: "psql '$DATABASE_URL' -f migrations/up.sql"
+      seed_cmd: "psql '$DATABASE_URL' -f migrations/seed.sql"
+
+# Docker-инфра: postgres + redis поднимаются через compose.
+docker:
+  compose_file: docker-compose.yml
+  project_name: fullstack
+
+# Линтеры.
+linter:
+  dr: true
+  kiss: true
+  unused_code: true
+  duplicates: true
+
+# Уведомления в Slack при крэше бэкенда.
+notify:
+  webhook_url: ${SLACK_WEBHOOK_URL}
+  events: [crash]
+  project_name: fullstack-app
+
+# Пользовательские шорткаты.
+aliases:
+  up: "dm docker up && dm db migrate && dm start"
+  down: "dm docker down"
+  reset: "dm db reset"
+  dbq: "dm db shell"

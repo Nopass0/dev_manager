@@ -1,0 +1,61 @@
+# =============================================================================
+#  Пример: Go-монорепозиторий (несколько сервисов на Go, общий shared-пакет)
+# =============================================================================
+#  Типичная структура Go-монорепо: общий модуль `shared/` и несколько сервисов,
+#  которые его импортируют. `dm start --affected` перезапустит только те сервисы,
+#  что реально зависят от изменённого файла (через граф импортов).
+#
+#  Структура:
+#    go-monorepo/
+#    ├── dm.yaml
+#    ├── go.work               ← Go workspace (мульти-модульный monorepo)
+#    ├── shared/               ← общая библиотека
+#    │   ├── go.mod
+#    │   └── auth.go
+#    └── services/
+#        ├── api/              ← HTTP API, порт 8080
+#        │   ├── go.mod
+#        │   └── main.go
+#        └── worker/           ← фоновый обработчик
+#            ├── go.mod
+#            └── main.go
+# =============================================================================
+
+version: 1
+project_name: go-platform
+
+services:
+  api:
+    path: ./services/api
+    language: go
+    tags: [backend, http]
+    order: 10
+    health:
+      kind: http
+      url: http://localhost:8080/health
+
+  worker:
+    path: ./services/worker
+    language: go
+    tags: [backend, background]
+    order: 20
+    depends_on: [api]
+
+defaults:
+  watch: true
+  restart_on_change: true
+
+linter:
+  dr: true
+  kiss: true
+  unused_code: true
+  duplicates: true
+
+profiles:
+  api-only:
+    services: [api]
+    description: Только HTTP API
+
+aliases:
+  t: "dm test"          # dm alias t → прогон тестов всех сервисов
+  b: "dm build --release"

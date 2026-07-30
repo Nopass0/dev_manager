@@ -1,0 +1,7 @@
+# Redis для Python-микросервисов (брокер Celery).
+version: "3.9"
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"

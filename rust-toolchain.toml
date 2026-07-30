@@ -1,0 +1,6 @@
+# Закрепляем nightly 1.93 для всего workspace.
+# Rust-инструмент автоматически скачает именно этот тулчейн при первом запуске.
+[toolchain]
+channel = "nightly-2025-11-08"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

@@ -1,0 +1,9 @@
+# Оверлей для окружения staging (применяется при --env staging).
+# debug-tool отфильтровывается автоматически (only_on: [dev]).
+services:
+  api:
+    run: "cargo run --release"   # release-сборка
+    env:
+      RUST_LOG: info
+  ml:
+    run: "python -m uvicorn main:app --port 8500"   # без --reload

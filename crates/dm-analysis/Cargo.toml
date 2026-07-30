@@ -1,0 +1,21 @@
+[package]
+name = "dm-analysis"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Анализ кода Dev Manager: символы, doc-комментарии, DRY/KISS, diff."
+
+[dependencies]
+dm-core.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+indexmap.workspace = true
+tree-sitter = "0.23"
+# Грамматики подsupported языки. Каждая тянет C-source и собирается через build.rs,
+# поэтому требуется C-компилятор (MSVC на Windows, gcc/clang на Linux).
+tree-sitter-rust = "0.23"
+tree-sitter-javascript = "0.23"
+tree-sitter-typescript = "0.23"
+tree-sitter-go = "0.23"

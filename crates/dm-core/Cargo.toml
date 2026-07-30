@@ -1,0 +1,17 @@
+[package]
+name = "dm-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Ядро Dev Manager: конфиг dm.yaml, модель проекта, единый .env, ошибки, пути."
+
+[dependencies]
+serde.workspace = true
+serde_yaml.workspace = true
+indexmap.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+regex.workspace = true
+dunce.workspace = true

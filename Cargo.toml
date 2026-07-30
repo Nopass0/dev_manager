@@ -1,0 +1,85 @@
+# =============================================================================
+#  Dev Manager (`dm`) — корневой манифест Cargo workspace.
+#
+#  Workspace состоит из 7 crate'ов с чёткими границами ответственности:
+#    dm-core       — конфиг (serde), модель проекта, единый .env, ошибки, пути.
+#    dm-runtime    — оркестрация процессов: spawn, kill_tree, watcher, hot reload.
+#    dm-cli        — бинарь `dm`: clap-команды, красивый вывод, диспетчер.
+#    dm-vcs        — git (через CLI), commit/push multi-repo, commit auto.
+#    dm-analysis   — tree-sitter: символы, doc-комментарии, DRY/KISS/unused.
+#    dm-deploy     — russh: SSH-деплой по шагам.
+#    dm-installer  — установка в PATH (Win+Linux), генерация oneliner-скриптов.
+#
+#  Тяжёлые подсистемы (analysis, deploy) вынесены в feature-флаги, чтобы ядро
+#  собиралось быстро и без лишних зависимостей (например, без C-компилятора).
+# =============================================================================
+[workspace]
+resolver = "2"
+members = [
+    "crates/dm-core",
+    "crates/dm-runtime",
+    "crates/dm-cli",
+    "crates/dm-vcs",
+    "crates/dm-analysis",
+    "crates/dm-deploy",
+    "crates/dm-installer",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.93"
+license = "MIT"
+authors = ["Dev Manager Contributors"]
+repository = "https://github.com/your-org/dev_manager"
+homepage = "https://github.com/your-org/dev_manager"
+description = "Единый менеджер разработки: оркестрация микросервисов, git-автоматизация и анализ кода."
+
+[workspace.dependencies]
+# --- Асинхронность / среда выполнения ---
+tokio = { version = "1", features = ["full"] }
+
+# --- Сериализация / конфиг ---
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+serde_json = "1"
+indexmap = { version = "2", features = ["serde"] }
+
+# --- CLI / ошибки / логи ---
+clap = { version = "4", features = ["derive", "env", "wrap_help"] }
+clap_complete = "4"
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+# --- Терминал / цвет / таблицы ---
+anstream = "0.6"
+anstyle = "1"
+comfy-table = "7"
+
+# --- Файловая система / платформа ---
+notify-debouncer-mini = "0.4"
+notify = "6"
+kill_tree = "0.2"
+dunce = "1"
+directories = "5"
+
+# --- Утилиты ---
+regex = "1"
+
+# --- Внутренние crate'ы (для перекрёстных ссылок между членами workspace) ---
+dm-core      = { path = "crates/dm-core" }
+dm-runtime   = { path = "crates/dm-runtime" }
+dm-cli       = { path = "crates/dm-cli" }
+dm-vcs       = { path = "crates/dm-vcs" }
+dm-analysis  = { path = "crates/dm-analysis" }
+dm-deploy    = { path = "crates/dm-deploy" }
+dm-installer = { path = "crates/dm-installer" }
+
+# Оптимизируем только то, что отдаём пользователям; зависимости — быстро.
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

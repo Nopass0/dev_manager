@@ -1,0 +1,65 @@
+# =============================================================================
+#  Пример: Multi-repo (каждый сервис в отдельном git-репозитории)
+# =============================================================================
+#  Когда микросервисы живут в разных репозиториях, Dev Manager объединяет их
+#  единым dm.yaml для локальной разработки. Git-операции (`dm commit`, `dm push`)
+#  работают по всем репо сразу.
+#
+#  Структура:
+#    multi-repo/
+#    ├── dm.yaml
+#    └── repos/
+#        ├── billing/   ← отдельный git-репо (Go)
+#        ├── auth/      ← отдельный git-репо (Rust)
+#        └── gateway/   ← отдельный git-репо (Node)
+# =============================================================================
+
+version: 1
+project_name: microservices
+
+services:
+  auth:
+    path: ./repos/auth
+    repo: ./repos/auth          # ← явное указание: это отдельный репозиторий
+    language: rust
+    tags: [core]
+    order: 10
+    health:
+      kind: tcp
+      port: 8081
+
+  billing:
+    path: ./repos/billing
+    repo: ./repos/billing       # отдельный репозиторий
+    language: go
+    tags: [core]
+    order: 20
+    depends_on: [auth]
+    health:
+      kind: tcp
+      port: 8082
+
+  gateway:
+    path: ./repos/gateway
+    repo: ./repos/gateway       # отдельный репозиторий
+    language: nodejs
+    tags: [edge]
+    order: 30
+    depends_on: [auth, billing]
+    health:
+      kind: http
+      url: http://localhost:8080/health
+
+defaults:
+  watch: true
+  restart_on_change: true
+
+linter:
+  dr: true
+  kiss: true
+  unused_code: true
+  duplicates: true
+
+aliases:
+  sync: "dm update && dm setup"          # вытянуть + установить во всех репо
+  commit-all: 'dm commit "sync: обновление подмодулей"'

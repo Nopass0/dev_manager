@@ -1,0 +1,31 @@
+[package]
+name = "dm-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Командный интерфейс Dev Manager (`dm`)."
+
+[dependencies]
+dm-core.workspace = true
+dm-runtime.workspace = true
+serde_yaml.workspace = true
+dm-vcs.workspace = true
+dm-analysis.workspace = true
+dm-deploy.workspace = true
+dm-installer.workspace = true
+tokio.workspace = true
+clap.workspace = true
+clap_complete.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anstream.workspace = true
+anstyle.workspace = true
+comfy-table.workspace = true
+indexmap.workspace = true
+
+[[bin]]
+name = "dm"
+path = "src/main.rs"

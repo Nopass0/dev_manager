@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="360" viewBox="0 0 680 360" role="img" aria-label="dm start demo">
+  <rect width="680" height="360" rx="10" fill="#0f172a"/>
+  <!-- заголовок окна -->
+  <rect width="680" height="30" rx="10" fill="#1e293b"/>
+  <rect y="20" width="680" height="10" fill="#1e293b"/>
+  <circle cx="16" cy="15" r="5" fill="#ef4444"/>
+  <circle cx="34" cy="15" r="5" fill="#f59e0b"/>
+  <circle cx="52" cy="15" r="5" fill="#22c55e"/>
+  <text x="340" y="19" font-family="ui-monospace,monospace" font-size="12" fill="#64748b" text-anchor="middle">dm start</text>
+
+  <g font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="13">
+    <text x="14" y="55" fill="#38bdf8">[dm]</text><text x="44" y="55" fill="#e2e8f0"> запуск проекта 'fullstack-app' — 2 сервис(ов)</text>
+    <text x="14" y="75" fill="#38bdf8">[dm]</text><text x="44" y="75" fill="#94a3b8">   • </text><text x="68" y="75" fill="#e2e8f0">api [rust] → cargo run</text>
+    <text x="14" y="93" fill="#38bdf8">[dm]</text><text x="44" y="93" fill="#94a3b8">   • </text><text x="68" y="93" fill="#e2e8f0">web [vite] → npm run dev</text>
+
+    <text x="14" y="120" fill="#ef4444">[api]</text><text x="50" y="120" fill="#64748b">SYS</text><text x="84" y="120" fill="#e2e8f0"> запуск: cargo run</text>
+    <text x="14" y="138" fill="#ef4444">[api]</text><text x="50" y="138" fill="#64748b">OUT</text><text x="84" y="138" fill="#cbd5e1">    Compiling api v0.1.0</text>
+    <text x="14" y="156" fill="#ef4444">[api]</text><text x="50" y="156" fill="#64748b">OUT</text><text x="84" y="156" fill="#22c55e">     Finished `release` profile</text>
+    <text x="14" y="174" fill="#ef4444">[api]</text><text x="50" y="174" fill="#64748b">OUT</text><text x="84" y="174" fill="#cbd5e1"> Listening on 0.0.0.0:8080</text>
+
+    <text x="14" y="201" fill="#f59e0b">[web]</text><text x="50" y="201" fill="#64748b">SYS</text><text x="84" y="201" fill="#e2e8f0"> запуск: npm run dev</text>
+    <text x="14" y="219" fill="#f59e0b">[web]</text><text x="50" y="219" fill="#64748b">OUT</text><text x="84" y="219" fill="#cbd5e1">   VITE v5.4.0  ready in 312 ms</text>
+    <text x="14" y="237" fill="#f59e0b">[web]</text><text x="50" y="237" fill="#64748b">OUT</text><text x="84" y="237" fill="#38bdf8">  ➜  Local:   http://localhost:5173/</text>
+
+    <!-- watcher срабатывает -->
+    <text x="14" y="268" fill="#a78bfa">[api]</text><text x="50" y="268" fill="#64748b">SYS</text><text x="84" y="268" fill="#e2e8f0"> обнаружены изменения — перезапуск</text>
+    <text x="14" y="286" fill="#a78bfa">[api]</text><text x="50" y="286" fill="#64748b">SYS</text><text x="84" y="286" fill="#e2e8f0"> перезапуск...</text>
+
+    <text x="14" y="316" fill="#22c55e">^C</text>
+    <text x="14" y="336" fill="#38bdf8">[dm]</text><text x="44" y="336" fill="#e2e8f0"> получен Ctrl+C, останавливаю сервисы…</text>
+    <text x="14" y="354" fill="#38bdf8">[dm]</text><text x="44" y="354" fill="#22c55e"> все сервисы остановлены.</text>
+  </g>
+</svg>

@@ -1,0 +1,9 @@
+# Оверлей для окружения dev (применяется при --env dev или DM_ENV=dev).
+# Подгружается ПОВЕРХ dm.yaml + base.yaml.
+services:
+  api:
+    run: "cargo run"           # dev: без оптимизаций
+    env:
+      RUST_LOG: debug
+  ml:
+    run: "python -m uvicorn main:app --reload --port 8500"   # с авто-перезагрузкой

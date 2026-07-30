@@ -1,0 +1,74 @@
+# =============================================================================
+#  Пример: Polyglot-проект (много языков + наследование конфига + окружения)
+# =============================================================================
+#  Демонстрирует расширенные возможности конфигурации:
+#    - extends: наследование от base-конфига;
+#    - dm.<env>.yaml: оверлеи под окружения (--env / DM_ENV);
+#    - only_on: сервис активен только в заданных окружениях;
+#    - интерполяция {{var}} / ${VAR}.
+#
+#  Структура:
+#    polyglot/
+#    ├── base.yaml          ← общая база (extends)
+#    ├── dm.yaml            ← основной (extends base.yaml)
+#    ├── dm.dev.yaml        ← оверлей для dev
+#    ├── dm.staging.yaml    ← оверлей для staging
+#    └── services/
+#        ├── api/           ← Rust
+#        ├── worker/        ← Go
+#        ├── ml/            ← Python
+#        └── debug-tool/    ← утилита отладки (только в dev)
+# =============================================================================
+
+version: 1
+project_name: polyglot-platform
+
+# Наследуем общую базу (defaults, общие линтеры и т.д.)
+extends: base.yaml
+
+services:
+  api:
+    path: ./services/api
+    language: rust
+    order: 10
+    health:
+      kind: http
+      url: http://localhost:8080/health
+
+  worker:
+    path: ./services/worker
+    language: go
+    order: 20
+    depends_on: [api]
+
+  ml:
+    path: ./services/ml
+    language: python
+    order: 30
+    depends_on: [api]
+    # Python-сервис тяжёлый — лимит ресурсов (best-effort).
+    resources:
+      cpu_percent: 50
+      memory_mb: 2048
+
+  # Отладочная утилита: только в окружении dev.
+  debug-tool:
+    path: ./services/debug-tool
+    language: rust
+    order: 40
+    only_on: [dev]               # в staging/prod этот сервис не запустится
+
+profiles:
+  prod:
+    services: [api, worker, ml]  # без debug-tool
+    description: Production-набор
+
+linter:
+  dr: true
+  kiss: true
+  unused_code: true
+  duplicates: true
+
+aliases:
+  dev: "dm --env dev start"
+  staging: "dm --env staging start"

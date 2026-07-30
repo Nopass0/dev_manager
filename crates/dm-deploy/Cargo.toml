@@ -1,0 +1,14 @@
+[package]
+name = "dm-deploy"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "SSH-деплой для Dev Manager (russh)."
+
+[dependencies]
+dm-core.workspace = true
+tokio.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true

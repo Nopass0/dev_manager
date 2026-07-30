@@ -1,0 +1,26 @@
+# Базовый конфиг: наследуется всеми dm.yaml через `extends: base.yaml`.
+# Содержит общие настройки, которые не хочется дублировать.
+
+version: 1
+project_name: polyglot-platform
+
+# Глобальные значения по умолчанию для всех сервисов (deep-merged в каждый).
+defaults:
+  watch: true
+  restart_on_change: true
+  language: rust            # явный дефолт языка
+
+# Общий lint-конфиг.
+linter:
+  dr: true
+  kiss: true
+  unused_code: true
+  duplicates: true
+
+# Общие переменные окружения (можно ссылаться через {{var}}).
+# (Полноценные per-service .env — в корневом .env.)
+database:
+  connections:
+    default:
+      kind: postgres
+      url: postgres://app:app@localhost:5432/polyglot

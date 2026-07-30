@@ -1,0 +1,31 @@
+# --- Rust ---
+# Для бинарного проекта Cargo.lock нужно коммитить (рекомендация Cargo).
+/target
+**/target
+*.rs.bk
+
+# --- IDE / редакторы ---
+.vscode/
+.idea/
+.zcode/
+.agents/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- Dev Manager runtime-артефакты ---
+.dm/
+.dm.pid
+.dm.lock
+
+# --- Локальные .env (распределяются автоматически, не коммитим) ---
+.env
+.env.local
+.env.*.local
+**/.env
+!**/.env.example
+
+# --- Примеры проектов для тестирования (если сложите сюда) ---
+/sandbox

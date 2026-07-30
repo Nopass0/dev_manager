@@ -1,0 +1,80 @@
+# =============================================================================
+#  Dev Manager — пример конфигурации.
+#
+#  Этот файл создаётся командой `dm init`. Отредактируйте его под свой проект.
+#  Полное описание всех полей — в docs/ru/configuration.md (RU) или
+#  docs/en/configuration.md (EN).
+# =============================================================================
+
+# Версия схемы. Поддерживается только 1.
+version: 1
+
+# Человекочитаемое имя проекта — показывается в логах и статусе.
+project_name: my-app
+
+# Единый .env в корне проекта. Из него переменные раскидываются по сервисам.
+# Формат файла — см. docs/ru/env-sync.md.
+env_file: .env
+
+# ---------------------------------------------------------------------------
+# Сервисы (микросервисы), которыми управляет Dev Manager.
+# ---------------------------------------------------------------------------
+services:
+  # API на Rust: будет запущен через `cargo run`, перезапускается при изменении .rs.
+  api:
+    path: ./services/api
+    language: rust
+    # run: cargo run            # можно не указывать — определим по Cargo.toml
+    watch: true
+    restart_on_change: true
+    order: 10                   # запускается первым (меньше = раньше)
+    delay_ms: 0
+    # tests:
+    #   cmd: cargo test
+    #   on_change: true
+    logs:
+      enabled: true
+      level: info
+
+  # Веб-фронтенд на TypeScript (Vite): `npm run dev` по умолчанию.
+  web:
+    path: ./services/web
+    language: vite
+    watch: true
+    restart_on_change: true
+    order: 20                   # запускается после api
+    delay_ms: 500               # подождать полсекунды перед стартом
+
+  # Пример сервиса в ОТДЕЛЬНОМ репозитории (multi-repo commit/push).
+  # В этом случае `dm commit server "msg"` закоммитит только сюда,
+  # а `dm commit "msg"` (без указания цели) — сразу в оба репозитория.
+  # server:
+  #   path: ./services/server
+  #   language: go
+  #   repo: ./services/server   # указывает, что это отдельный git-репозиторий
+
+# ---------------------------------------------------------------------------
+# Цели деплоя по SSH (russh). Триггер `manual` — только по `dm deploy <name>`.
+# ---------------------------------------------------------------------------
+deploy: []
+  # - name: prod
+  #   host: prod.example.com
+  #   user: deploy
+  #   port: 22
+  #   key: ~/.ssh/id_ed25519
+  #   remote_dir: /srv/my-app
+  #   on: after_push            # manual | after_commit | after_push
+  #   steps:
+  #     - git pull
+  #     - cargo build --release
+  #     - systemctl restart my-app
+
+# ---------------------------------------------------------------------------
+# Анализатор кода: DRY / KISS / поиск дубликатов и неиспользуемого кода.
+# ---------------------------------------------------------------------------
+linter:
+  dr: true
+  kiss: true
+  unused_code: true
+  duplicates: true
+  auto_fix: false               # true — удалять неиспользуемый код автоматически
