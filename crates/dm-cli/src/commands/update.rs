@@ -4,10 +4,10 @@
 //! командой: одна команда вместо `cd` в каждый репо и `git pull`.
 
 use crate::commands::load_project_config;
-use crate::output::{print_system, success_style, warn_style, println_styled};
+use crate::output::{print_system, println_styled, success_style, warn_style};
 use crate::shell;
-use dm_core::paths;
 use dm_core::DmResult;
+use dm_core::paths;
 use std::collections::HashSet;
 use std::path::Path;
 
@@ -28,16 +28,19 @@ pub async fn run() -> DmResult<()> {
                 ok += 1;
                 println_styled(&format!("  ✓ {label} обновлён"), success_style());
             }
-            Ok(code) => println_styled(
-                &format!("  ! {label}: git вернул код {code}"),
-                warn_style(),
-            ),
+            Ok(code) => {
+                println_styled(&format!("  ! {label}: git вернул код {code}"), warn_style())
+            }
             Err(e) => println_styled(&format!("  ✗ {label}: {e}"), crate::output::error_style()),
         }
     }
     println_styled(
         &format!("готово: {}/{} обновлено", ok, repos.len()),
-        if ok == repos.len() { success_style() } else { warn_style() },
+        if ok == repos.len() {
+            success_style()
+        } else {
+            warn_style()
+        },
     );
     Ok(())
 }

@@ -4,11 +4,11 @@
 //! MVP-провайдеры вызывают системные `cargo audit`, `npm audit`, `govulncheck`,
 //! `pip-audit`. Трейт готов к расширению (SBOM, Renovate-стиль PR и т.д.).
 
-use crate::commands::{load_project_config, DepsAction, DepsArgs};
+use crate::commands::{DepsAction, DepsArgs, load_project_config};
 use crate::output::{print_system, println_styled, success_style, warn_style};
 use comfy_table::{ContentArrangement, Table};
-use dm_core::project::ServiceLanguage;
 use dm_core::DmResult;
+use dm_core::project::ServiceLanguage;
 use std::path::Path;
 use std::process::Command;
 
@@ -50,8 +50,15 @@ pub fn tool_for(lang: ServiceLanguage) -> Option<Box<dyn DepTool>> {
 pub async fn run(args: DepsArgs) -> DmResult<()> {
     let (config, root) = load_project_config()?;
     let outdated = matches!(args.action, DepsAction::Outdated);
-    let label = if outdated { "устаревших зависимостей" } else { "уязвимостей зависимостей" };
-    print_system(&format!("аудит {label} по {} сервисам", config.services.len()));
+    let label = if outdated {
+        "устаревших зависимостей"
+    } else {
+        "уязвимостей зависимостей"
+    };
+    print_system(&format!(
+        "аудит {label} по {} сервисам",
+        config.services.len()
+    ));
 
     let mut table = Table::new();
     table
@@ -74,7 +81,11 @@ pub async fn run(args: DepsArgs) -> DmResult<()> {
             },
             None => (false, "аудит для языка не настроен".to_string()),
         };
-        let status = if summary.0 { "✓ чисто" } else { "⚠ есть замечания" };
+        let status = if summary.0 {
+            "✓ чисто"
+        } else {
+            "⚠ есть замечания"
+        };
         table.add_row(vec![
             name.to_string(),
             svc.language.label().to_string(),

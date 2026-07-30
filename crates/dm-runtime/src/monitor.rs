@@ -8,7 +8,6 @@
 //! Используется supervisor'ом для enforcement `resources.memory_mb`: при
 //! превышении — уведомление или kill (согласно `resources.on_exceed`).
 
-
 /// Возвращает текущее RSS (resident set size) процесса в мегабайтах.
 ///
 /// Best-effort: при ошибке возвращает `None` (мониторинг пропускает итерацию).
@@ -45,12 +44,7 @@ fn rss_linux(pid: u32) -> Option<u64> {
     for line in status.lines() {
         if let Some(rest) = line.strip_prefix("VmRSS:") {
             // "VmRSS:\t      1234 kB"
-            let kb: u64 = rest
-                .trim()
-                .split_whitespace()
-                .next()?
-                .parse()
-                .ok()?;
+            let kb: u64 = rest.trim().split_whitespace().next()?.parse().ok()?;
             return Some(kb * 1024);
         }
     }
@@ -72,11 +66,7 @@ fn rss_windows(pid: u32) -> Option<u64> {
         .ok()?;
     let text = String::from_utf8_lossy(&out.stdout);
     // Вывод: "WorkingSetSize\n12345678\n"
-    text.lines()
-        .nth(1)?
-        .trim()
-        .parse::<u64>()
-        .ok()
+    text.lines().nth(1)?.trim().parse::<u64>().ok()
 }
 
 /// macOS: ps -o rss= -p <pid> (RSS в kB).

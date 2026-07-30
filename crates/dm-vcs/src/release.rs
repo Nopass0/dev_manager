@@ -27,7 +27,11 @@ impl Version {
         if parts.next().is_some() {
             return None;
         }
-        Some(Self { major, minor, patch })
+        Some(Self {
+            major,
+            minor,
+            patch,
+        })
     }
 
     /// Возвращает новую версию с применением bump'а.

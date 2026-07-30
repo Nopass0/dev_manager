@@ -56,11 +56,16 @@ impl LanguageParser for GoParser {
     }
 }
 
-fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
+fn walk(node: &Node, source: &str, file: &std::path::Path, out: &mut Vec<Symbol>) {
     match node.kind() {
         "function_declaration" => {
             if let Some(name) = named_child_text(node, "name", source) {
-                let mut sym = Symbol::new(name, SymbolKind::Function, file.clone(), start_row(node));
+                let mut sym = Symbol::new(
+                    name,
+                    SymbolKind::Function,
+                    file.to_path_buf(),
+                    start_row(node),
+                );
                 sym.end_line = end_row(node);
                 if let Some(params) = node.child_by_field_name("parameters") {
                     sym.signature = node_text(&params, source).to_string();
@@ -71,7 +76,12 @@ fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
         }
         "method_declaration" => {
             if let Some(name) = named_child_text(node, "name", source) {
-                let mut sym = Symbol::new(name, SymbolKind::Function, file.clone(), start_row(node));
+                let mut sym = Symbol::new(
+                    name,
+                    SymbolKind::Function,
+                    file.to_path_buf(),
+                    start_row(node),
+                );
                 sym.end_line = end_row(node);
                 if let Some(params) = node.child_by_field_name("parameters") {
                     sym.signature = node_text(&params, source).to_string();
@@ -84,21 +94,21 @@ fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
             // Может содержать несколько type_spec.
             let mut cursor = node.walk();
             for child in node.children(&mut cursor) {
-                if child.kind() == "type_spec" {
-                    if let Some(name) = named_child_text(&child, "name", source) {
-                        // struct/interface — определяем по дочернему типу.
-                        let kind = child
-                            .child_by_field_name("type")
-                            .map(|t| match t.kind() {
-                                "struct_type" => SymbolKind::Struct,
-                                "interface_type" => SymbolKind::Class,
-                                _ => SymbolKind::Other,
-                            })
-                            .unwrap_or(SymbolKind::Other);
-                        let mut sym = Symbol::new(name, kind, file.clone(), start_row(&child));
-                        sym.doc = doc_above(node, source);
-                        out.push(sym);
-                    }
+                if child.kind() == "type_spec"
+                    && let Some(name) = named_child_text(&child, "name", source)
+                {
+                    // struct/interface — определяем по дочернему типу.
+                    let kind = child
+                        .child_by_field_name("type")
+                        .map(|t| match t.kind() {
+                            "struct_type" => SymbolKind::Struct,
+                            "interface_type" => SymbolKind::Class,
+                            _ => SymbolKind::Other,
+                        })
+                        .unwrap_or(SymbolKind::Other);
+                    let mut sym = Symbol::new(name, kind, file.to_path_buf(), start_row(&child));
+                    sym.doc = doc_above(node, source);
+                    out.push(sym);
                 }
             }
         }
@@ -111,7 +121,12 @@ fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
                     for c in child.children(&mut name_cur) {
                         if c.kind() == "identifier" {
                             let text = node_text(&c, source).to_string();
-                            let mut sym = Symbol::new(text, SymbolKind::Variable, file.clone(), start_row(node));
+                            let mut sym = Symbol::new(
+                                text,
+                                SymbolKind::Variable,
+                                file.to_path_buf(),
+                                start_row(node),
+                            );
                             sym.doc = doc_above(node, source);
                             out.push(sym);
                             break;

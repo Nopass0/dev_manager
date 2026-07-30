@@ -455,8 +455,8 @@ fn default_max_parallel() -> u32 {
 }
 fn default_watch_ignore_exts() -> Vec<String> {
     [
-        "lock", "log", "tmp", "cache", "pid", "svg", "png", "jpg", "jpeg", "gif", "pdf",
-        "md", "txt", "json.gz", "bin",
+        "lock", "log", "tmp", "cache", "pid", "svg", "png", "jpg", "jpeg", "gif", "pdf", "md",
+        "txt", "json.gz", "bin",
     ]
     .iter()
     .map(|s| s.to_string())

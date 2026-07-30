@@ -8,8 +8,8 @@
 //! Триггеры деплоя (`manual` / `after_push` / `after_commit`) проверяются
 //! функцией [`should_trigger`].
 
-use dm_core::config::{DeployTarget, DeployTrigger};
 use dm_core::DmResult;
+use dm_core::config::{DeployTarget, DeployTrigger};
 use std::path::Path;
 
 /// Точка расширения для конкретного движка деплоя (russh / local / docker…).
@@ -91,8 +91,17 @@ mod tests {
 
     #[test]
     fn trigger_logic() {
-        assert!(!should_trigger(DeployTrigger::Manual, DeployTrigger::AfterPush));
-        assert!(should_trigger(DeployTrigger::AfterPush, DeployTrigger::AfterPush));
-        assert!(!should_trigger(DeployTrigger::AfterCommit, DeployTrigger::AfterPush));
+        assert!(!should_trigger(
+            DeployTrigger::Manual,
+            DeployTrigger::AfterPush
+        ));
+        assert!(should_trigger(
+            DeployTrigger::AfterPush,
+            DeployTrigger::AfterPush
+        ));
+        assert!(!should_trigger(
+            DeployTrigger::AfterCommit,
+            DeployTrigger::AfterPush
+        ));
     }
 }

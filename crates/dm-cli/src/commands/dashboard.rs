@@ -5,8 +5,8 @@
 use crate::commands::load_project_config;
 use crate::output::print_system;
 use comfy_table::{ContentArrangement, Table};
-use dm_core::project::ServiceLanguage;
 use dm_core::DmResult;
+use dm_core::project::ServiceLanguage;
 use std::time::Duration;
 
 /// Точка входа команды.
@@ -27,8 +27,14 @@ pub async fn run() -> DmResult<()> {
             .set_header(vec!["Сервис", "Язык", "Порт", "Статус"]);
         for (name, svc) in &config.services {
             let port = default_port(svc.language);
-            let busy = tokio::net::TcpStream::connect(("127.0.0.1", port)).await.is_ok();
-            let status = if busy { "🟢 слушает" } else { "⚫️ свободен" };
+            let busy = tokio::net::TcpStream::connect(("127.0.0.1", port))
+                .await
+                .is_ok();
+            let status = if busy {
+                "🟢 слушает"
+            } else {
+                "⚫️ свободен"
+            };
             table.add_row(vec![
                 name.to_string(),
                 svc.language.label().to_string(),

@@ -5,7 +5,7 @@
 //! Debounce группирует шквал событий (например, от `cargo build`) в одно.
 
 use dm_core::project::{Service, ServiceLanguage};
-use notify_debouncer_mini::{new_debouncer, DebouncedEvent};
+use notify_debouncer_mini::{DebouncedEvent, new_debouncer};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -23,8 +23,9 @@ pub struct WatchEvent {
 /// Handle активного watcher'а. При падении (Drop) корректно освобождает ресурсы.
 pub struct FileWatcher {
     /// `notify`-debouncer владеет потоком наблюдения; храним чтобы жил.
-    /// Тип параметризован конкретным бекендом (на Windows — ReadDirectoryChanges).
-    _debouncer: notify_debouncer_mini::Debouncer<notify::ReadDirectoryChangesWatcher>,
+    /// `RecommendedWatcher` автоматически выбирает лучший бекенд под платформу:
+    /// ReadDirectoryChanges (Windows), inotify (Linux), FSEvents (macOS).
+    _debouncer: notify_debouncer_mini::Debouncer<notify::RecommendedWatcher>,
 }
 
 impl FileWatcher {
@@ -34,7 +35,10 @@ impl FileWatcher {
     /// События отправляются в `tx` после debounce-окна (200 мс).
     ///
     /// Игнорируются типичные шумные каталоги: `target`, `node_modules`, `.git`.
-    pub fn spawn(services: Vec<Service>, tx: mpsc::UnboundedSender<WatchEvent>) -> std::io::Result<Self> {
+    pub fn spawn(
+        services: Vec<Service>,
+        tx: mpsc::UnboundedSender<WatchEvent>,
+    ) -> std::io::Result<Self> {
         // Замыкание watcher'а держит копию списка сервисов и канал отправки.
         // `new_debouncer` в 0.4 принимает (delay, callback), где callback —
         // `DebounceEventHandler` (реализуется любой `FnMut(Result<...>)`).
@@ -62,22 +66,22 @@ impl FileWatcher {
                         continue;
                     }
                     if let Some(svc) = services.iter().find(|s| path.starts_with(&s.path)) {
-                        by_service
-                            .entry(svc.name.clone())
-                            .or_default()
-                            .push(path);
+                        by_service.entry(svc.name.clone()).or_default().push(path);
                     }
                 }
                 if let Ok(tx) = tx.lock() {
                     for (svc, paths) in by_service {
-                        let _ = tx.send(WatchEvent { service: svc, paths });
+                        let _ = tx.send(WatchEvent {
+                            service: svc,
+                            paths,
+                        });
                     }
                 }
             }
         };
 
         let mut debouncer = new_debouncer(Duration::from_millis(200), callback)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| std::io::Error::other(e.to_string()))?;
 
         for svc in services.iter().filter(|s| s.watch) {
             let _ = debouncer
@@ -85,7 +89,9 @@ impl FileWatcher {
                 .watch(&svc.path, notify::RecursiveMode::Recursive);
         }
 
-        Ok(Self { _debouncer: debouncer })
+        Ok(Self {
+            _debouncer: debouncer,
+        })
     }
 }
 
@@ -111,7 +117,7 @@ pub fn is_ignored_path(path: &std::path::Path, language: ServiceLanguage) -> boo
     path.components().any(|comp| {
         comp.as_os_str()
             .to_str()
-            .map(|s| ignored_segments.iter().any(|ig| *ig == s))
+            .map(|s| ignored_segments.contains(&s))
             .unwrap_or(false)
     })
 }
@@ -159,7 +165,10 @@ mod tests {
         let (tx, _rx) = mpsc::unbounded_channel();
         let s = svc("a", ServiceLanguage::Rust, &tmp);
         let w = FileWatcher::spawn(vec![s], tx);
-        assert!(w.is_ok(), "watcher должен запускаться на существующем каталоге");
+        assert!(
+            w.is_ok(),
+            "watcher должен запускаться на существующем каталоге"
+        );
         let _ = std::fs::remove_dir_all(&tmp);
     }
 }

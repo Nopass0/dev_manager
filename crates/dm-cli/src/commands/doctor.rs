@@ -13,8 +13,16 @@ pub async fn run() -> DmResult<()> {
     print_system("диагностика окружения…");
     println_styled("——— Инструменты ———", crate::output::dim_style());
 
-    let tools = [("git", "система контроля версий"), ("cargo", "Rust"), ("node", "Node.js"),
-        ("npm", "npm"), ("bun", "Bun"), ("go", "Go"), ("python", "Python"), ("docker", "Docker")];
+    let tools = [
+        ("git", "система контроля версий"),
+        ("cargo", "Rust"),
+        ("node", "Node.js"),
+        ("npm", "npm"),
+        ("bun", "Bun"),
+        ("go", "Go"),
+        ("python", "Python"),
+        ("docker", "Docker"),
+    ];
     for (tool, label) in tools {
         check_tool(tool, label);
     }
@@ -45,7 +53,9 @@ fn check_tool(name: &str, label: &str) {
             let _ = error_style; // сохранить импорт
             anstream::eprintln!(
                 "{}",
-                format!("  ✗ {label} ({name}) не найден. Установите {name}, чтобы использовать связанные функции dm.")
+                format!(
+                    "  ✗ {label} ({name}) не найден. Установите {name}, чтобы использовать связанные функции dm."
+                )
             );
         }
     }
@@ -63,9 +73,15 @@ fn check_disk_space() {
             .map(|o| o.status.success())
             .unwrap_or(false);
         if ok {
-            println_styled("  • fsutil доступен; для деталей выполните `fsutil volume diskfree`", crate::output::dim_style());
+            println_styled(
+                "  • fsutil доступен; для деталей выполните `fsutil volume diskfree`",
+                crate::output::dim_style(),
+            );
         } else {
-            println_styled("  • информация о диске недоступна", crate::output::dim_style());
+            println_styled(
+                "  • информация о диске недоступна",
+                crate::output::dim_style(),
+            );
         }
     }
     #[cfg(unix)]
@@ -76,9 +92,15 @@ fn check_disk_space() {
             .map(|o| o.status.success())
             .unwrap_or(false);
         if ok {
-            println_styled("  • df доступен; для деталей выполните `df -h .`", crate::output::dim_style());
+            println_styled(
+                "  • df доступен; для деталей выполните `df -h .`",
+                crate::output::dim_style(),
+            );
         } else {
-            println_styled("  • информация о диске недоступна", crate::output::dim_style());
+            println_styled(
+                "  • информация о диске недоступна",
+                crate::output::dim_style(),
+            );
         }
     }
 }
@@ -87,12 +109,18 @@ fn check_disk_space() {
 async fn check_common_ports() {
     let ports = [3000, 3001, 5173, 8080, 5432, 6379];
     for port in ports {
-        if tokio::net::TcpStream::connect(("127.0.0.1", port)).await.is_ok() {
+        if tokio::net::TcpStream::connect(("127.0.0.1", port))
+            .await
+            .is_ok()
+        {
             println_styled(
                 &format!("  ! порт {port} занят — `dm ports --free={port}` чтобы освободить"),
                 warn_style(),
             );
         }
     }
-    println_styled("  • типичные dev-порты свободны (или проверка пропущена)", crate::output::dim_style());
+    println_styled(
+        "  • типичные dev-порты свободны (или проверка пропущена)",
+        crate::output::dim_style(),
+    );
 }

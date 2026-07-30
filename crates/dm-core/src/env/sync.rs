@@ -107,7 +107,9 @@ fn parse_kv(line: &str) -> Option<(String, String)> {
 /// Формат выхода — плоский `KEY=value` без секций: это финальный `.env` сервиса.
 pub fn write_service_env(path: &Path, vars: &EnvSection) -> DmResult<()> {
     let mut out = String::new();
-    out.push_str("# Этот файл сгенерирован Dev Manager (`dm env sync`). Не редактируйте вручную —\n");
+    out.push_str(
+        "# Этот файл сгенерирован Dev Manager (`dm env sync`). Не редактируйте вручную —\n",
+    );
     out.push_str("# правьте единый .env в корне проекта и запустите `dm env sync` снова.\n\n");
     for (k, v) in vars {
         out.push_str(&format!("{k}={}\n", quote_if_needed(v)));
@@ -152,7 +154,10 @@ API_URL='http://localhost:3001'
 "#;
         let env = parse_unified_env(content).unwrap();
         assert_eq!(env.sections[GLOBAL_SECTION]["LOG_LEVEL"], "info");
-        assert_eq!(env.sections["api"]["DATABASE_URL"], "postgres://localhost/api");
+        assert_eq!(
+            env.sections["api"]["DATABASE_URL"],
+            "postgres://localhost/api"
+        );
         assert_eq!(env.sections["api"]["PORT"], "3001");
         assert_eq!(env.sections["api"]["DEBUG"], "true");
         assert_eq!(env.sections["web"]["API_URL"], "http://localhost:3001");

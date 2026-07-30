@@ -11,7 +11,7 @@
 //!
 //! False positives возможны; результат рассчитан на ручную проверку.
 
-use crate::search::{search, SearchOptions};
+use crate::search::{SearchOptions, search};
 use std::path::Path;
 
 /// Категория найденного секрета.
@@ -122,7 +122,15 @@ pub fn scan(root: &Path) -> Vec<SecretFinding> {
     }
 
     // Назначенные секреты: password= / secret= / token= / api_key=.
-    for keyword in ["password", "passwd", "secret", "api_key", "apikey", "token", "access_token"] {
+    for keyword in [
+        "password",
+        "passwd",
+        "secret",
+        "api_key",
+        "apikey",
+        "token",
+        "access_token",
+    ] {
         for m in search(
             root,
             keyword,
@@ -143,7 +151,13 @@ pub fn scan(root: &Path) -> Vec<SecretFinding> {
     }
 
     // Connection string с учётными данными.
-    for proto in ["postgres://", "postgresql://", "mongodb://", "redis://", "mysql://"] {
+    for proto in [
+        "postgres://",
+        "postgresql://",
+        "mongodb://",
+        "redis://",
+        "mysql://",
+    ] {
         for m in search(root, proto, &SearchOptions::default()) {
             if m.text.contains(':') && m.text.contains('@') {
                 out.push(SecretFinding {
@@ -164,7 +178,11 @@ fn looks_like_aws_keyid(line: &str) -> bool {
     if let Some(idx) = line.find("AKIA") {
         let tail = &line[idx + 4..];
         // 16 алфансимволов после AKIA.
-        tail.chars().take(16).filter(|c| c.is_alphanumeric()).count() >= 16
+        tail.chars()
+            .take(16)
+            .filter(|c| c.is_alphanumeric())
+            .count()
+            >= 16
     } else {
         false
     }
@@ -174,7 +192,11 @@ fn looks_like_aws_keyid(line: &str) -> bool {
 fn looks_like_google_key(line: &str) -> bool {
     if let Some(idx) = line.find("AIza") {
         let tail = &line[idx + 4..];
-        tail.chars().take(35).filter(|c| c.is_alphanumeric()).count() >= 35
+        tail.chars()
+            .take(35)
+            .filter(|c| c.is_alphanumeric())
+            .count()
+            >= 35
     } else {
         false
     }
@@ -199,7 +221,7 @@ fn looks_like_credential_assignment(line: &str, keyword: &str) -> bool {
     };
     let after = &line[idx + keyword.len()..];
     // Ищем `=` или `:` после ключевого слова.
-    let eq = after.find(|c: char| c == '=' || c == ':');
+    let eq = after.find(['=', ':']);
     let Some(eq) = eq else {
         return false;
     };
@@ -208,13 +230,24 @@ fn looks_like_credential_assignment(line: &str, keyword: &str) -> bool {
         return false;
     }
     // Игнорируем placeholder'ы и переменные окружения/импорты.
-    let placeholders = ["none", "null", "undefined", "changeme", "change_me", "xxx",
-        "your_", "example", "secret_key", "${", "process.env", "os.environ", "env(", "getenv"];
+    let placeholders = [
+        "none",
+        "null",
+        "undefined",
+        "changeme",
+        "change_me",
+        "xxx",
+        "your_",
+        "example",
+        "secret_key",
+        "${",
+        "process.env",
+        "os.environ",
+        "env(",
+        "getenv",
+    ];
     let val_lower_head = value.to_lowercase();
-    if placeholders
-        .iter()
-        .any(|p| val_lower_head.starts_with(p))
-    {
+    if placeholders.iter().any(|p| val_lower_head.starts_with(p)) {
         return false;
     }
     // Длина осмысленного секрета (без обрамляющих кавычек).
@@ -271,9 +304,17 @@ mod tests {
         let dir = std::env::temp_dir().join("dm_secrets_test_conn");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join("a.rs"), "let url = \"postgres://user:hunter2@host/db\";\n").unwrap();
+        std::fs::write(
+            dir.join("a.rs"),
+            "let url = \"postgres://user:hunter2@host/db\";\n",
+        )
+        .unwrap();
         let findings = scan(&dir);
-        assert!(findings.iter().any(|f| f.kind == SecretKind::ConnectionString));
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.kind == SecretKind::ConnectionString)
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

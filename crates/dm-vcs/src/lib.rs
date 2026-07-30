@@ -23,9 +23,9 @@ pub mod push;
 pub mod release;
 
 pub use changelog::render_release_section;
-pub use commit::{commit_all, commit_in_repo, CommitOutcome};
-pub use conventional::{group_by_type, ConventionalCommit, COMMIT_TYPES};
-pub use git::{git_binary_version, has_changes, is_repo, run_git, GitOutput};
-pub use multi::{branch_all, collect_repo_paths, rebase_all, stash_all, RepoOpResult};
-pub use push::{push_all, push_in_repo, PushOutcome};
-pub use release::{suggest_bump, Bump, Version};
+pub use commit::{CommitOutcome, commit_all, commit_in_repo};
+pub use conventional::{COMMIT_TYPES, ConventionalCommit, group_by_type};
+pub use git::{GitOutput, git_binary_version, has_changes, is_repo, run_git};
+pub use multi::{RepoOpResult, branch_all, collect_repo_paths, rebase_all, stash_all};
+pub use push::{PushOutcome, push_all, push_in_repo};
+pub use release::{Bump, Version, suggest_bump};

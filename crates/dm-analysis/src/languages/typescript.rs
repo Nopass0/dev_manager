@@ -56,7 +56,7 @@ impl LanguageParser for TypeScriptParser {
     }
 }
 
-fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
+fn walk(node: &Node, source: &str, file: &std::path::Path, out: &mut Vec<Symbol>) {
     match node.kind() {
         "function_declaration" => {
             if let Some(sym) = build_function(node, source, file) {
@@ -65,23 +65,25 @@ fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
         }
         "class_declaration" => {
             if let Some(name) = named_child_text(node, "name", source) {
-                let mut sym = Symbol::new(name, SymbolKind::Class, file.clone(), start_row(node));
+                let mut sym =
+                    Symbol::new(name, SymbolKind::Class, file.to_path_buf(), start_row(node));
                 sym.end_line = end_row(node);
                 sym.doc = doc_above(node, source);
                 out.push(sym);
             }
             let mut cursor = node.walk();
             for child in node.children(&mut cursor) {
-                if matches!(child.kind(), "method_definition") {
-                    if let Some(sym) = build_method(&child, source, file) {
-                        out.push(sym);
-                    }
+                if matches!(child.kind(), "method_definition")
+                    && let Some(sym) = build_method(&child, source, file)
+                {
+                    out.push(sym);
                 }
             }
         }
         "interface_declaration" | "type_alias_declaration" => {
             if let Some(name) = named_child_text(node, "name", source) {
-                let mut sym = Symbol::new(name, SymbolKind::Class, file.clone(), start_row(node));
+                let mut sym =
+                    Symbol::new(name, SymbolKind::Class, file.to_path_buf(), start_row(node));
                 sym.end_line = end_row(node);
                 sym.doc = doc_above(node, source);
                 out.push(sym);
@@ -95,21 +97,21 @@ fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
         "lexical_declaration" | "variable_declaration" => {
             let mut cursor = node.walk();
             for child in node.children(&mut cursor) {
-                if child.kind() == "variable_declarator" {
-                    if let Some(name) = named_child_text(&child, "name", source) {
-                        let is_fn = child
-                            .child_by_field_name("value")
-                            .map(|v| matches!(v.kind(), "arrow_function" | "function_expression"))
-                            .unwrap_or(false);
-                        let kind = if is_fn {
-                            SymbolKind::Function
-                        } else {
-                            SymbolKind::Variable
-                        };
-                        let mut sym = Symbol::new(name, kind, file.clone(), start_row(node));
-                        sym.doc = doc_above(node, source);
-                        out.push(sym);
-                    }
+                if child.kind() == "variable_declarator"
+                    && let Some(name) = named_child_text(&child, "name", source)
+                {
+                    let is_fn = child
+                        .child_by_field_name("value")
+                        .map(|v| matches!(v.kind(), "arrow_function" | "function_expression"))
+                        .unwrap_or(false);
+                    let kind = if is_fn {
+                        SymbolKind::Function
+                    } else {
+                        SymbolKind::Variable
+                    };
+                    let mut sym = Symbol::new(name, kind, file.to_path_buf(), start_row(node));
+                    sym.doc = doc_above(node, source);
+                    out.push(sym);
                 }
             }
         }
@@ -121,9 +123,14 @@ fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
     }
 }
 
-fn build_function(node: &Node, source: &str, file: &PathBuf) -> Option<Symbol> {
+fn build_function(node: &Node, source: &str, file: &std::path::Path) -> Option<Symbol> {
     let name = named_child_text(node, "name", source)?;
-    let mut sym = Symbol::new(name, SymbolKind::Function, file.clone(), start_row(node));
+    let mut sym = Symbol::new(
+        name,
+        SymbolKind::Function,
+        file.to_path_buf(),
+        start_row(node),
+    );
     sym.end_line = end_row(node);
     if let Some(params) = node.child_by_field_name("parameters") {
         sym.signature = node_text(&params, source).to_string();
@@ -132,9 +139,14 @@ fn build_function(node: &Node, source: &str, file: &PathBuf) -> Option<Symbol> {
     Some(sym)
 }
 
-fn build_method(node: &Node, source: &str, file: &PathBuf) -> Option<Symbol> {
+fn build_method(node: &Node, source: &str, file: &std::path::Path) -> Option<Symbol> {
     let name = named_child_text(node, "name", source)?;
-    let mut sym = Symbol::new(name, SymbolKind::Function, file.clone(), start_row(node));
+    let mut sym = Symbol::new(
+        name,
+        SymbolKind::Function,
+        file.to_path_buf(),
+        start_row(node),
+    );
     if let Some(params) = node.child_by_field_name("parameters") {
         sym.signature = node_text(&params, source).to_string();
     }
@@ -151,12 +163,11 @@ fn doc_above(node: &Node, source: &str) -> Option<String> {
     if let Some(d) = doc_above_sibling(node, source) {
         return Some(d);
     }
-    if let Some(parent) = node.parent() {
-        if parent.kind() == "export_statement" {
-            if let Some(d) = doc_above_sibling(&parent, source) {
-                return Some(d);
-            }
-        }
+    if let Some(parent) = node.parent()
+        && parent.kind() == "export_statement"
+        && let Some(d) = doc_above_sibling(&parent, source)
+    {
+        return Some(d);
     }
     None
 }
@@ -180,7 +191,10 @@ fn doc_above_sibling(node: &Node, source: &str) -> Option<String> {
 
 fn clean_comment(raw: &str) -> String {
     let trimmed = raw.trim();
-    if let Some(inner) = trimmed.strip_prefix("/**").and_then(|s| s.strip_suffix("*/")) {
+    if let Some(inner) = trimmed
+        .strip_prefix("/**")
+        .and_then(|s| s.strip_suffix("*/"))
+    {
         inner
             .lines()
             .map(|l| l.trim().trim_start_matches('*').trim())

@@ -40,7 +40,10 @@ fn list_services(config: &dm_core::Config) -> DmResult<()> {
         ]);
     }
     println!("{t}");
-    println_styled(&format!("всего сервисов: {}", config.services.len()), dim_style());
+    println_styled(
+        &format!("всего сервисов: {}", config.services.len()),
+        dim_style(),
+    );
     Ok(())
 }
 

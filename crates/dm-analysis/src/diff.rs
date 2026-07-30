@@ -39,22 +39,17 @@ pub struct ChangedCodeSymbol {
 pub fn changed_symbols(before: &[Symbol], after: &[Symbol]) -> Vec<ChangedCodeSymbol> {
     let mut before_map: HashMap<(String, String), &Symbol> = HashMap::new();
     for s in before {
-        let key = (
-            s.file.to_string_lossy().into_owned(),
-            s.name.clone(),
-        );
+        let key = (s.file.to_string_lossy().into_owned(), s.name.clone());
         before_map.insert(key, s);
     }
 
-    let mut after_keys: std::collections::HashSet<(String, String)> = std::collections::HashSet::new();
+    let mut after_keys: std::collections::HashSet<(String, String)> =
+        std::collections::HashSet::new();
     let mut out = Vec::new();
 
     // Добавленные / модифицированные.
     for s in after {
-        let key = (
-            s.file.to_string_lossy().into_owned(),
-            s.name.clone(),
-        );
+        let key = (s.file.to_string_lossy().into_owned(), s.name.clone());
         after_keys.insert(key.clone());
         match before_map.get(&key) {
             None => out.push(ChangedCodeSymbol {
@@ -77,10 +72,7 @@ pub fn changed_symbols(before: &[Symbol], after: &[Symbol]) -> Vec<ChangedCodeSy
     }
     // Удалённые.
     for s in before {
-        let key = (
-            s.file.to_string_lossy().into_owned(),
-            s.name.clone(),
-        );
+        let key = (s.file.to_string_lossy().into_owned(), s.name.clone());
         if !after_keys.contains(&key) {
             out.push(ChangedCodeSymbol {
                 name: s.name.clone(),
@@ -107,7 +99,13 @@ impl ChangedCodeSymbol {
             ChangeKind::Modified => "изменена",
         };
         let kind_label = self.kind.label();
-        format!("{} {} '{}' ({})", action, kind_label, self.name, self.file.display())
+        format!(
+            "{} {} '{}' ({})",
+            action,
+            kind_label,
+            self.name,
+            self.file.display()
+        )
     }
 }
 
@@ -139,8 +137,16 @@ mod tests {
         let after = vec![f("b", "()", 1)];
         let changes = changed_symbols(&before, &after);
         assert_eq!(changes.len(), 2);
-        assert!(changes.iter().any(|c| c.change == ChangeKind::Removed && c.name == "a"));
-        assert!(changes.iter().any(|c| c.change == ChangeKind::Added && c.name == "b"));
+        assert!(
+            changes
+                .iter()
+                .any(|c| c.change == ChangeKind::Removed && c.name == "a")
+        );
+        assert!(
+            changes
+                .iter()
+                .any(|c| c.change == ChangeKind::Added && c.name == "b")
+        );
     }
 
     #[test]

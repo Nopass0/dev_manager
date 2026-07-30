@@ -3,10 +3,10 @@
 //! По языку вызывает системный билдер: cargo build / npm run build / go build /
 //! tsc / dotnet build. `--release` включает оптимизацию где применимо.
 
-use crate::commands::{load_project_config, BuildArgs};
-use crate::output::{print_system, success_style, warn_style, println_styled};
-use dm_core::project::ServiceLanguage;
+use crate::commands::{BuildArgs, load_project_config};
+use crate::output::{print_system, println_styled, success_style, warn_style};
 use dm_core::DmResult;
+use dm_core::project::ServiceLanguage;
 use std::path::Path;
 use std::process::Command;
 
@@ -21,13 +21,20 @@ pub async fn run(args: BuildArgs) -> DmResult<()> {
                 .ok_or_else(|| dm_core::DmError::ServiceNotFound(n.clone()))?;
             vec![(n.clone(), svc.clone())]
         }
-        None => config.services.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+        None => config
+            .services
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect(),
     };
 
     for (name, svc) in targets {
         let dir = dm_core::paths::resolve(&root, Path::new(&svc.path));
         let Some(cmd) = build_cmd(svc.language, args.release) else {
-            println_styled(&format!("  ! {name}: сборка для языка не настроена"), warn_style());
+            println_styled(
+                &format!("  ! {name}: сборка для языка не настроена"),
+                warn_style(),
+            );
             continue;
         };
         print_system(&format!("сборка '{name}': {cmd}"));

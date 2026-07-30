@@ -12,7 +12,7 @@
 //! Запуск: `dm alias dbq` → выполнит `dm db shell --conn=api` в корне проекта.
 
 use crate::commands::load_project_config;
-use crate::output::{print_system, success_style, warn_style, println_styled};
+use crate::output::{print_system, println_styled, success_style, warn_style};
 use crate::shell;
 use dm_core::DmResult;
 
@@ -20,17 +20,13 @@ use dm_core::DmResult;
 pub async fn run(name: &str, args: &[String]) -> DmResult<()> {
     let (config, root) = load_project_config()?;
 
-    let command = config
-        .aliases
-        .get(name)
-        .cloned()
-        .ok_or_else(|| {
-            let available: Vec<&str> = config.aliases.keys().map(|s| s.as_str()).collect();
-            dm_core::DmError::invalid_config(format!(
-                "алиас '{name}' не найден. Доступно: [{}]",
-                available.join(", ")
-            ))
-        })?;
+    let command = config.aliases.get(name).cloned().ok_or_else(|| {
+        let available: Vec<&str> = config.aliases.keys().map(|s| s.as_str()).collect();
+        dm_core::DmError::invalid_config(format!(
+            "алиас '{name}' не найден. Доступно: [{}]",
+            available.join(", ")
+        ))
+    })?;
 
     // Если переданы доп. аргументы — дописываем их в конец команды (как args).
     let full = if args.is_empty() {

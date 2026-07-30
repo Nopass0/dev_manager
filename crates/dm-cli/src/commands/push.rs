@@ -1,9 +1,9 @@
 //! `dm push` — пуш всех репозиториев в их origin.
 
-use crate::commands::{load_project_config, PREFIX_SYS};
-use crate::output::{print_system, success_style, println_styled};
-use dm_core::paths;
+use crate::commands::{PREFIX_SYS, load_project_config};
+use crate::output::{print_system, println_styled, success_style};
 use dm_core::DmResult;
+use dm_core::paths;
 use dm_vcs::push::push_all;
 use std::collections::HashSet;
 use std::path::PathBuf;
@@ -35,17 +35,14 @@ pub async fn run() -> DmResult<()> {
 }
 
 /// Собирает уникальные пути git-репозиториев всех сервисов.
-fn collect_repo_paths(
-    config: &dm_core::Config,
-    root: &PathBuf,
-) -> DmResult<Vec<PathBuf>> {
+fn collect_repo_paths(config: &dm_core::Config, root: &std::path::Path) -> DmResult<Vec<PathBuf>> {
     let mut set: HashSet<PathBuf> = HashSet::new();
     for (_name, svc) in &config.services {
         let p = svc
             .repo
             .as_ref()
             .map(|r| paths::resolve(root, std::path::Path::new(r)))
-            .unwrap_or_else(|| root.clone());
+            .unwrap_or_else(|| root.to_path_buf());
         set.insert(p);
     }
     Ok(set.into_iter().collect())

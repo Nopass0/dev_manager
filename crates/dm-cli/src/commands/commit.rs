@@ -6,12 +6,12 @@
 //! - `dm commit auto` — формирует сообщение из списка изменённых символов
 //!   (функций/классов/структур) через `dm-analysis`.
 
-use crate::commands::{load_project_config, CommitArgs};
-use crate::output::{error_style, print_system, success_style, println_styled};
+use crate::commands::{CommitArgs, load_project_config};
+use crate::output::{error_style, print_system, println_styled, success_style};
+use dm_core::DmResult;
 use dm_core::paths;
 use dm_vcs::commit::{commit_all, commit_in_repo};
 use dm_vcs::diff::changed_file_paths;
-use dm_core::DmResult;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -33,12 +33,12 @@ pub async fn run(args: CommitArgs) -> DmResult<()> {
                 .repo
                 .as_ref()
                 .map(|r| paths::resolve(&root, std::path::Path::new(r)))
-                .unwrap_or_else(|| root.clone());
-            let msg = args
-                .message
-                .ok_or_else(|| dm_core::DmError::invalid_config(
+                .unwrap_or_else(|| root.to_path_buf());
+            let msg = args.message.ok_or_else(|| {
+                dm_core::DmError::invalid_config(
                     "укажите сообщение коммита: `dm commit <svc> \"сообщение\"`",
-                ))?;
+                )
+            })?;
             let outcome = commit_in_repo(&repo, &msg).await?;
             report_one(&outcome);
             Ok(())
@@ -48,9 +48,7 @@ pub async fn run(args: CommitArgs) -> DmResult<()> {
         Some(other) if repo_paths.len() == 1 || args.message.is_some() => {
             // Если пользователь явно передал сообщение, но target — это и есть
             // само сообщение (случай `dm commit "msg"`).
-            let msg = args
-                .message
-                .unwrap_or_else(|| other.to_string());
+            let msg = args.message.unwrap_or_else(|| other.to_string());
             let outcomes = commit_all(&repo_paths, &msg).await;
             for o in &outcomes {
                 report_one(o);
@@ -64,13 +62,15 @@ pub async fn run(args: CommitArgs) -> DmResult<()> {
                 "Использование: dm commit \"msg\" | dm commit <svc> \"msg\" | dm commit auto",
                 error_style(),
             );
-            Err(dm_core::DmError::invalid_config("некорректный вызов commit"))
+            Err(dm_core::DmError::invalid_config(
+                "некорректный вызов commit",
+            ))
         }
     }
 }
 
 /// Реализация `dm commit auto`: формирует сообщение из изменённых символов.
-async fn run_auto(root: &PathBuf, repo_paths: &[PathBuf]) -> DmResult<()> {
+async fn run_auto(root: &std::path::Path, repo_paths: &[PathBuf]) -> DmResult<()> {
     print_system("анализ изменённых файлов для авто-сообщения…");
     let mut changed_symbols: Vec<dm_analysis::ChangedCodeSymbol> = Vec::new();
     let mut seen_files: HashSet<PathBuf> = HashSet::new();
@@ -84,10 +84,11 @@ async fn run_auto(root: &PathBuf, repo_paths: &[PathBuf]) -> DmResult<()> {
             }
             seen_files.insert(abs.clone());
             // Разбираем «до» и «после» по HEAD.
-            let before = dm_vcs::git::run_git(repo, &["show", &format!("HEAD:{}", rel.display())], false)
-                .await
-                .map(|o| o.stdout)
-                .unwrap_or_default();
+            let before =
+                dm_vcs::git::run_git(repo, &["show", &format!("HEAD:{}", rel.display())], false)
+                    .await
+                    .map(|o| o.stdout)
+                    .unwrap_or_default();
             let after = std::fs::read_to_string(&abs).unwrap_or_default();
 
             if let (Some(before_syms), Some(after_syms)) = (
@@ -124,17 +125,14 @@ fn build_auto_message_from_analysis(changes: &[dm_analysis::ChangedCodeSymbol]) 
 }
 
 /// Собирает уникальные пути git-репозиториев всех сервисов (для multi-repo).
-fn collect_repo_paths(
-    config: &dm_core::Config,
-    root: &PathBuf,
-) -> DmResult<Vec<PathBuf>> {
+fn collect_repo_paths(config: &dm_core::Config, root: &std::path::Path) -> DmResult<Vec<PathBuf>> {
     let mut set: HashSet<PathBuf> = HashSet::new();
     for (_name, svc) in &config.services {
         let p = svc
             .repo
             .as_ref()
             .map(|r| paths::resolve(root, std::path::Path::new(r)))
-            .unwrap_or_else(|| root.clone());
+            .unwrap_or_else(|| root.to_path_buf());
         set.insert(p);
     }
     Ok(set.into_iter().collect())
@@ -143,16 +141,7 @@ fn collect_repo_paths(
 /// Печатает результат коммита одного репозитория.
 fn report_one(out: &dm_vcs::commit::CommitOutcome) {
     let marker = if out.committed { "✓" } else { "·" };
-    let hash = out
-        .commit_hash
-        .as_deref()
-        .unwrap_or("      ");
-    println!(
-        "{} {} {} — {}",
-        marker,
-        hash,
-        out.repo.display(),
-        out.note
-    );
+    let hash = out.commit_hash.as_deref().unwrap_or("      ");
+    println!("{} {} {} — {}", marker, hash, out.repo.display(), out.note);
     let _ = success_style; // сохранить импорт для будущих цветных вариантов
 }

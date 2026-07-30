@@ -6,8 +6,8 @@
 
 use crate::commands::load_project_config;
 use crate::output::{dim_style, print_system, println_styled};
-use dm_core::paths;
 use dm_core::DmResult;
+use dm_core::paths;
 use dm_vcs::run_git;
 use std::path::Path;
 
@@ -24,12 +24,7 @@ pub async fn run() -> DmResult<()> {
     for repo in &repos {
         let label = repo_label(repo, &root);
         println_styled(&format!("── {label} ──"), dim_style());
-        let out = run_git(
-            repo,
-            &["log", "--oneline", "--decorate", "-10"],
-            false,
-        )
-        .await;
+        let out = run_git(repo, &["log", "--oneline", "--decorate", "-10"], false).await;
         match out {
             Ok(o) if o.ok() => {
                 for line in o.stdout.lines() {

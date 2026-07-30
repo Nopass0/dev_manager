@@ -57,9 +57,8 @@ pub fn capture(command: &str, cwd: &Path) -> Result<CmdResult, String> {
 /// Запускает команду, перехватывая вывод, и возвращает `DmResult` с понятной
 /// ошибкой при ненулевом коде. Удобно для команд, которым важен успех.
 pub fn run_ok(command: &str, cwd: &Path) -> dm_core::DmResult<CmdResult> {
-    let res = capture(command, cwd).map_err(|e| {
-        dm_core::DmError::Process(format!("shell capture: {e}"))
-    })?;
+    let res = capture(command, cwd)
+        .map_err(|e| dm_core::DmError::Process(format!("shell capture: {e}")))?;
     if res.success() {
         Ok(res)
     } else {

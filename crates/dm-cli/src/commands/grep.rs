@@ -3,10 +3,10 @@
 //! Поддерживает `-i` (ignore case), `-w` (whole word), `-t ext1,ext2` (фильтр
 //! по расширениям). Вывод в стиле ripgrep: путь к файлу, затем строки с номерами.
 
-use crate::commands::load_project_config;
 use crate::commands::GrepArgs;
+use crate::commands::load_project_config;
 use crate::output::{dim_style, print_system};
-use dm_analysis::search::{search as run_search, SearchOptions};
+use dm_analysis::search::{SearchOptions, search as run_search};
 use dm_core::DmResult;
 
 /// Точка входа команды.
@@ -26,10 +26,7 @@ pub async fn run(args: GrepArgs) -> DmResult<()> {
 
     // Группируем по файлу, печатаем «как ripgrep»: имя файла, затем N: строка.
     let mut current: Option<&std::path::Path> = None;
-    let header = format!(
-        "{}",
-        paint_dim(&root.to_string_lossy())
-    );
+    let header = paint_dim(&root.to_string_lossy()).to_string();
     let _ = header;
 
     for m in &matches {

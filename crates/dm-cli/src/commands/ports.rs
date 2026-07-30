@@ -16,13 +16,12 @@ pub async fn run(args: PortsArgs) -> DmResult<()> {
     print_system("активные слушатели на типичных dev-портах:");
     let ports = [3000, 3001, 5173, 8080, 5432, 6379, 9000];
     for port in ports {
-        let busy = tokio::net::TcpStream::connect(("127.0.0.1", port)).await.is_ok();
+        let busy = tokio::net::TcpStream::connect(("127.0.0.1", port))
+            .await
+            .is_ok();
         if busy {
             let owner = owner_of_port(port);
-            println_styled(
-                &format!("  • {port} занят {owner}"),
-                warn_style(),
-            );
+            println_styled(&format!("  • {port} занят {owner}"), warn_style());
         }
     }
     Ok(())
@@ -36,13 +35,22 @@ async fn free_port(port: u16) -> DmResult<()> {
         Some(pid) => {
             let killed = kill_pid(pid);
             if killed {
-                println_styled(&format!("  ✓ процесс {pid} завершён, порт {port} свободен"), success_style());
+                println_styled(
+                    &format!("  ✓ процесс {pid} завершён, порт {port} свободен"),
+                    success_style(),
+                );
             } else {
-                println_styled(&format!("  ! не удалось завершить процесс {pid}"), warn_style());
+                println_styled(
+                    &format!("  ! не удалось завершить процесс {pid}"),
+                    warn_style(),
+                );
             }
         }
         None => {
-            println_styled(&format!("  • порт {port} не занят"), crate::output::dim_style());
+            println_styled(
+                &format!("  • порт {port} не занят"),
+                crate::output::dim_style(),
+            );
         }
     }
     Ok(())

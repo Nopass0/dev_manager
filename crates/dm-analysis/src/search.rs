@@ -38,7 +38,7 @@ pub struct SearchOptions {
 pub fn search(root: &Path, pattern: &str, opts: &SearchOptions) -> Vec<Match> {
     let needle = prepare_needle(pattern, opts.case_insensitive);
     let mut out = Vec::new();
-    walk(root, root, opts, &mut |path, _ext| {
+    walk(root, opts, &mut |path, _ext| {
         let Ok(text) = std::fs::read_to_string(path) else {
             return;
         };
@@ -70,7 +70,7 @@ pub fn replace(
 ) -> Vec<PathBuf> {
     let needle = prepare_needle(pattern, opts.case_insensitive);
     let mut changed = Vec::new();
-    walk(root, root, opts, &mut |path, _ext| {
+    walk(root, opts, &mut |path, _ext| {
         let Ok(text) = std::fs::read_to_string(path) else {
             return;
         };
@@ -182,7 +182,7 @@ fn is_word_boundary(text: &str, start: usize, end: usize) -> bool {
 }
 
 /// Рекурсивный обход с фильтрами; вызывает `visit(path, extension)` для каждого файла.
-fn walk(root: &Path, dir: &Path, opts: &SearchOptions, visit: &mut impl FnMut(&Path, &str)) {
+fn walk(dir: &Path, opts: &SearchOptions, visit: &mut impl FnMut(&Path, &str)) {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return;
     };
@@ -197,13 +197,10 @@ fn walk(root: &Path, dir: &Path, opts: &SearchOptions, visit: &mut impl FnMut(&P
             if is_ignored_dir(name) {
                 continue;
             }
-            walk(root, &path, opts, visit);
+            walk(&path, opts, visit);
             continue;
         }
-        let ext = path
-            .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("");
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
         if !ext_filter.is_empty() && !ext_filter.contains(ext) {
             continue;
         }
@@ -219,9 +216,20 @@ fn walk(root: &Path, dir: &Path, opts: &SearchOptions, visit: &mut impl FnMut(&P
 fn is_ignored_dir(name: &str) -> bool {
     matches!(
         name,
-        ".git" | "target" | "node_modules" | "dist" | "build" | ".next"
-            | "out" | "__pycache__" | ".venv" | "venv" | "vendor" | ".cache"
-            | ".dm" | "coverage"
+        ".git"
+            | "target"
+            | "node_modules"
+            | "dist"
+            | "build"
+            | ".next"
+            | "out"
+            | "__pycache__"
+            | ".venv"
+            | "venv"
+            | "vendor"
+            | ".cache"
+            | ".dm"
+            | "coverage"
     )
 }
 
@@ -290,7 +298,10 @@ mod tests {
         let changed = replace(&dir, "keep", "changed", &SearchOptions::default(), true);
         assert_eq!(changed.len(), 1);
         // Файл не изменён.
-        assert_eq!(std::fs::read_to_string(dir.join("a.txt")).unwrap(), "keep me\n");
+        assert_eq!(
+            std::fs::read_to_string(dir.join("a.txt")).unwrap(),
+            "keep me\n"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 

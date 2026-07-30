@@ -34,11 +34,7 @@ impl GitOutput {
 /// # Ошибки
 /// - [`DmError::ToolMissing`] если `git` не найден в PATH.
 /// - [`DmError::ExternalCommand`] если код возврата ненулевой и `require_ok=true`.
-pub async fn run_git(
-    repo: &Path,
-    args: &[&str],
-    require_ok: bool,
-) -> DmResult<GitOutput> {
+pub async fn run_git(repo: &Path, args: &[&str], require_ok: bool) -> DmResult<GitOutput> {
     // Проверяем наличие git только при первом сбое запуска — cheaper.
     let mut cmd = Command::new("git");
     cmd.arg("-C").arg(repo);
@@ -53,9 +49,7 @@ pub async fn run_git(
             return Err(DmError::ToolMissing("git".to_string()));
         }
         Err(e) => {
-            return Err(DmError::Process(format!(
-                "не удалось запустить git: {e}"
-            )));
+            return Err(DmError::Process(format!("не удалось запустить git: {e}")));
         }
     };
 

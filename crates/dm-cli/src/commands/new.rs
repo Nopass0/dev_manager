@@ -3,10 +3,10 @@
 //! Создаёт минимальный сервис-скелет под выбранный язык в `./<name>/` и
 //! добавляет запись в `dm.yaml`.
 
-use crate::output::{print_system, success_style, println_styled};
+use crate::output::{print_system, println_styled, success_style};
+use dm_core::DmResult;
 use dm_core::config::discover_config;
 use dm_core::project::ServiceLanguage;
-use dm_core::DmResult;
 use std::path::Path;
 
 /// Точка входа команды.
@@ -39,7 +39,8 @@ async fn run_service(args: crate::commands::NewArgs) -> DmResult<()> {
     let target = cwd.join(&args.name);
     if target.exists() {
         return Err(dm_core::DmError::invalid_config(format!(
-            "каталог '{}' уже существует", target.display()
+            "каталог '{}' уже существует",
+            target.display()
         )));
     }
     std::fs::create_dir_all(&target)?;
@@ -58,11 +59,17 @@ async fn run_service(args: crate::commands::NewArgs) -> DmResult<()> {
         })?;
         let created = crate::templates::apply(&template, &target, &args.name)?;
         println_styled(
-            &format!("  ✓ сервис '{}' [{}] из шаблона '{}'", args.name, template.language, template.name),
+            &format!(
+                "  ✓ сервис '{}' [{}] из шаблона '{}'",
+                args.name, template.language, template.name
+            ),
             success_style(),
         );
         for f in &created {
-            println_styled(&format!("    {}", f.strip_prefix(&cwd).unwrap_or(f).display()), crate::output::dim_style());
+            println_styled(
+                &format!("    {}", f.strip_prefix(&cwd).unwrap_or(f).display()),
+                crate::output::dim_style(),
+            );
         }
         // Добавляем в dm.yaml с правильным путём ./<name>.
         let svc_entry = crate::commands::init::build_service_yaml_with_path(
@@ -76,15 +83,22 @@ async fn run_service(args: crate::commands::NewArgs) -> DmResult<()> {
 
     // Маршрут 2: --lang (минимальный скелет).
     let lang_str = args.lang.as_deref().unwrap_or("rust");
-    let lang = parse_language(lang_str)
-        .ok_or_else(|| dm_core::DmError::invalid_config(format!("неизвестный язык '{lang_str}'")))?;
+    let lang = parse_language(lang_str).ok_or_else(|| {
+        dm_core::DmError::invalid_config(format!("неизвестный язык '{lang_str}'"))
+    })?;
     scaffold(&target, &args.name, lang)?;
-    println_styled(&format!("  ✓ создан сервис '{}' [{}]", args.name, lang.label()), success_style());
+    println_styled(
+        &format!("  ✓ создан сервис '{}' [{}]", args.name, lang.label()),
+        success_style(),
+    );
 
     // Добавляем запись в dm.yaml.
     if let Ok(config_path) = discover_config(&cwd) {
         append_service_to_config(&config_path, &args.name, lang_str)?;
-        println_styled(&format!("  ✓ запись добавлена в {}", config_path.display()), success_style());
+        println_styled(
+            &format!("  ✓ запись добавлена в {}", config_path.display()),
+            success_style(),
+        );
     } else {
         print_system("dm.yaml не найден — создайте его через `dm init`.");
     }
@@ -120,29 +134,48 @@ fn scaffold(dir: &Path, name: &str, lang: ServiceLanguage) -> DmResult<()> {
         ServiceLanguage::Rust => {
             std::fs::write(
                 dir.join("Cargo.toml"),
-                format!("[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n[dependencies]\n"),
+                format!(
+                    "[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nedition = \"2024\"\n\n[dependencies]\n"
+                ),
             )?;
             std::fs::create_dir_all(dir.join("src"))?;
-            std::fs::write(dir.join("src/main.rs"), "fn main() {\n    println!(\"hello from {name}\");\n}\n")?;
+            std::fs::write(
+                dir.join("src/main.rs"),
+                "fn main() {\n    println!(\"hello from {name}\");\n}\n",
+            )?;
         }
         ServiceLanguage::Go => {
             std::fs::write(dir.join("go.mod"), format!("module {name}\n\ngo 1.22\n"))?;
-            std::fs::write(dir.join("main.go"), "package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"hello\")\n}\n")?;
+            std::fs::write(
+                dir.join("main.go"),
+                "package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"hello\")\n}\n",
+            )?;
         }
-        ServiceLanguage::TypeScript | ServiceLanguage::Vite | ServiceLanguage::Nextjs | ServiceLanguage::Remix => {
+        ServiceLanguage::TypeScript
+        | ServiceLanguage::Vite
+        | ServiceLanguage::Nextjs
+        | ServiceLanguage::Remix => {
             std::fs::write(
                 dir.join("package.json"),
-                format!("{{\n  \"name\": \"{name}\",\n  \"version\": \"0.1.0\",\n  \"scripts\": {{ \"dev\": \"vite\" }}\n}}\n"),
+                format!(
+                    "{{\n  \"name\": \"{name}\",\n  \"version\": \"0.1.0\",\n  \"scripts\": {{ \"dev\": \"vite\" }}\n}}\n"
+                ),
             )?;
             std::fs::create_dir_all(dir.join("src"))?;
             std::fs::write(dir.join("src/index.ts"), "console.log('hello');\n")?;
         }
         ServiceLanguage::JavaScript | ServiceLanguage::Nodejs => {
-            std::fs::write(dir.join("package.json"), format!("{{\n  \"name\": \"{name}\",\n  \"version\": \"0.1.0\"\n}}\n"))?;
+            std::fs::write(
+                dir.join("package.json"),
+                format!("{{\n  \"name\": \"{name}\",\n  \"version\": \"0.1.0\"\n}}\n"),
+            )?;
             std::fs::write(dir.join("index.js"), "console.log('hello');\n")?;
         }
         ServiceLanguage::Python => {
-            std::fs::write(dir.join("main.py"), "def main():\n    print('hello')\n\nif __name__ == '__main__':\n    main()\n")?;
+            std::fs::write(
+                dir.join("main.py"),
+                "def main():\n    print('hello')\n\nif __name__ == '__main__':\n    main()\n",
+            )?;
         }
         _ => {
             std::fs::write(dir.join("README.md"), format!("# {name}\n"))?;
@@ -154,9 +187,7 @@ fn scaffold(dir: &Path, name: &str, lang: ServiceLanguage) -> DmResult<()> {
 /// Дописывает сервис в dm.yaml (простая текстовая вставка секции).
 fn append_service_to_config(path: &Path, name: &str, lang: &str) -> DmResult<()> {
     let content = std::fs::read_to_string(path)?;
-    let entry = format!(
-        "  {name}:\n    path: ./{name}\n    language: {lang}\n"
-    );
+    let entry = format!("  {name}:\n    path: ./{name}\n    language: {lang}\n");
     // Если секция services уже есть — вставляем перед следующей верхнеуровневой
     // секцией; иначе создаём.
     let new = if let Some(idx) = content.find("services:") {
@@ -187,18 +218,20 @@ fn append_service_to_config(path: &Path, name: &str, lang: &str) -> DmResult<()>
 /// `tests/` (Rust), `src/` (TS/JS) и т.д.
 async fn run_file(args: &crate::commands::NewArgs, kind: FileKind) -> DmResult<()> {
     let lang_str = args.lang.as_deref().unwrap_or("rust");
-    let lang = parse_language(lang_str)
-        .ok_or_else(|| dm_core::DmError::invalid_config(format!("неизвестный язык '{lang_str}'")))?;
+    let lang = parse_language(lang_str).ok_or_else(|| {
+        dm_core::DmError::invalid_config(format!("неизвестный язык '{lang_str}'"))
+    })?;
     let cwd = std::env::current_dir()?;
 
     let (rel_dir, ext, content) = template_for(kind, &args.name, lang);
-    let dir = cwd.join(&rel_dir);
+    let dir = cwd.join(rel_dir);
     std::fs::create_dir_all(&dir)?;
     let filename = format!("{}.{}", args.name, ext);
     let path = dir.join(&filename);
     if path.exists() {
         return Err(dm_core::DmError::invalid_config(format!(
-            "файл '{}' уже существует", path.display()
+            "файл '{}' уже существует",
+            path.display()
         )));
     }
     std::fs::write(&path, content)?;
@@ -233,9 +266,7 @@ fn template_for(
         (FileKind::Route, ServiceLanguage::Rust) => (
             "src/routes",
             "rs",
-            format!(
-                "use axum::routing::get;\n\npub async fn {name}() {{\n    // TODO\n}}\n"
-            ),
+            format!("use axum::routing::get;\n\npub async fn {name}() {{\n    // TODO\n}}\n"),
         ),
         (FileKind::Route, ServiceLanguage::TypeScript)
         | (FileKind::Route, ServiceLanguage::JavaScript)
@@ -257,21 +288,23 @@ fn template_for(
         | (FileKind::Component, ServiceLanguage::Remix) => (
             "src/components",
             "tsx",
-            format!(
-                "export function {name}() {{\n  return (\n    <div>{name}</div>\n  );\n}}\n"
-            ),
+            format!("export function {name}() {{\n  return (\n    <div>{name}</div>\n  );\n}}\n"),
         ),
         (FileKind::Test, ServiceLanguage::Rust) => (
             "tests",
             "rs",
-            format!("#[cfg(test)]\nmod tests {{\n    #[test]\n    fn {name}() {{\n        assert!(true);\n    }}\n}}\n"),
+            format!(
+                "#[cfg(test)]\nmod tests {{\n    #[test]\n    fn {name}() {{\n        assert!(true);\n    }}\n}}\n"
+            ),
         ),
         (FileKind::Test, ServiceLanguage::TypeScript)
         | (FileKind::Test, ServiceLanguage::JavaScript)
         | (FileKind::Test, ServiceLanguage::Bun) => (
             "tests",
             "test.ts",
-            format!("import {{ test, expect }} from 'bun:test';\n\ntest('{name}', () => {{\n  expect(1).toBe(1);\n}});\n"),
+            format!(
+                "import {{ test, expect }} from 'bun:test';\n\ntest('{name}', () => {{\n  expect(1).toBe(1);\n}});\n"
+            ),
         ),
         (FileKind::Test, ServiceLanguage::Go) => (
             "",
@@ -288,7 +321,10 @@ fn migration_timestamp() -> String {
     // Используем системную `date` где доступно; иначе — millis-заглушка.
     #[cfg(unix)]
     {
-        if let Ok(out) = std::process::Command::new("date").arg("+%Y%m%d%H%M%S").output() {
+        if let Ok(out) = std::process::Command::new("date")
+            .arg("+%Y%m%d%H%M%S")
+            .output()
+        {
             if let Ok(s) = String::from_utf8(out.stdout) {
                 return s.trim().to_string();
             }

@@ -48,7 +48,10 @@ pub fn find_kiss_violations(symbols: &[Symbol]) -> Vec<LintFinding> {
 
 /// Грубо оценивает число параметров по строке сигнатуры.
 fn count_params(signature: &str) -> usize {
-    let trimmed = signature.trim_start_matches('(').trim_end_matches(')').trim();
+    let trimmed = signature
+        .trim_start_matches('(')
+        .trim_end_matches(')')
+        .trim();
     if trimmed.is_empty() {
         return 0;
     }
@@ -75,7 +78,11 @@ mod tests {
     fn flags_long_signature() {
         let mut s = Symbol::new("big", SymbolKind::Function, PathBuf::from("a.rs"), 1);
         s.signature = "(a: i32, b: i32, c: i32, d: i32, e: i32, f: i32, g: i32)".into();
-        assert!(find_kiss_violations(&[s]).iter().any(|f| f.message.contains("параметров")));
+        assert!(
+            find_kiss_violations(&[s])
+                .iter()
+                .any(|f| f.message.contains("параметров"))
+        );
     }
 
     #[test]

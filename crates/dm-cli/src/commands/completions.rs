@@ -5,7 +5,7 @@
 
 use crate::output::{println_styled, success_style};
 use clap::CommandFactory;
-use clap_complete::{generate, Shell};
+use clap_complete::{Shell, generate};
 use dm_core::DmResult;
 
 /// Точка входа команды.

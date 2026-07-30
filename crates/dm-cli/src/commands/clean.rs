@@ -6,8 +6,8 @@
 //! - `docker` — dangling-образы и остановленные контейнеры проекта;
 //! - `all` — всё перечисленное.
 
-use crate::commands::{load_project_config, CleanArgs};
-use crate::output::{print_system, success_style, println_styled};
+use crate::commands::{CleanArgs, load_project_config};
+use crate::output::{print_system, println_styled, success_style};
 use dm_core::DmResult;
 use std::path::Path;
 use std::process::Command;
@@ -53,14 +53,15 @@ fn clean_cache(config: &dm_core::Config, root: &Path) {
         let dir = dm_core::paths::resolve(root, Path::new(&svc.path));
         for cache in CACHE_DIRS {
             let target = dir.join(cache);
-            if target.exists() {
-                if std::fs::remove_dir_all(&target).is_ok() {
-                    cleared += 1;
-                }
+            if target.exists() && std::fs::remove_dir_all(&target).is_ok() {
+                cleared += 1;
             }
         }
     }
-    println_styled(&format!("  удалено каталогов кэша: {cleared}"), success_style());
+    println_styled(
+        &format!("  удалено каталогов кэша: {cleared}"),
+        success_style(),
+    );
 }
 
 /// Удаляет локальные ветки, слитые в текущую (orphan-ветки).
@@ -79,7 +80,10 @@ fn clean_branches(root: &Path, yes: bool) {
         .filter(|l| !l.is_empty() && !protected.contains(l))
         .collect();
     if to_delete.is_empty() {
-        println_styled("  слитых веток для удаления нет", crate::output::dim_style());
+        println_styled(
+            "  слитых веток для удаления нет",
+            crate::output::dim_style(),
+        );
         return;
     }
     println_styled(
@@ -91,7 +95,10 @@ fn clean_branches(root: &Path, yes: bool) {
         for b in &to_delete {
             println!("    {b}");
         }
-        println_styled("  используйте --yes (-y) для удаления", crate::output::dim_style());
+        println_styled(
+            "  используйте --yes (-y) для удаления",
+            crate::output::dim_style(),
+        );
         return;
     }
     let mut deleted = 0usize;

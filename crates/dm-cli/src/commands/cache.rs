@@ -1,7 +1,7 @@
 //! `dm cache clear` — очистка кэшей сборок сервисов.
 
-use crate::commands::{load_project_config, CacheAction};
-use crate::output::{print_system, success_style, println_styled};
+use crate::commands::{CacheAction, load_project_config};
+use crate::output::{print_system, println_styled, success_style};
 use dm_core::DmResult;
 use std::path::Path;
 

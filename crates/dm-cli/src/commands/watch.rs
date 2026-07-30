@@ -4,10 +4,10 @@
 //! (или корне проекта) повторно выполняет `<cmd>`. Удобно для тестов/линтеров/
 //! сборки без полного `dm start`.
 
-use crate::commands::{load_project_config, WatchArgs};
+use crate::commands::{WatchArgs, load_project_config};
 use crate::output::{print_log_line, print_system};
-use dm_core::project::Service;
 use dm_core::DmResult;
+use dm_core::project::Service;
 use dm_runtime::logs::{LogLevel, LogLine};
 use dm_runtime::watcher::FileWatcher;
 use tokio::process::Command;
@@ -79,7 +79,11 @@ async fn run_once(argv: &[String], cwd: &std::path::Path) {
         Ok(status) => {
             print_log_line(&LogLine::new(
                 "watch".into(),
-                if status.success() { LogLevel::Info } else { LogLevel::Error },
+                if status.success() {
+                    LogLevel::Info
+                } else {
+                    LogLevel::Error
+                },
                 format!("завершено с кодом {}", status.code().unwrap_or(-1)),
             ));
         }

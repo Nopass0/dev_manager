@@ -3,7 +3,7 @@
 //! Находит символ по имени в исходниках, затем ищет все textual references на
 //! это имя во всех файлах. Используется командой `dm refs <symbol>`.
 
-use crate::search::{search, Match, SearchOptions};
+use crate::search::{Match, SearchOptions, search};
 use std::path::Path;
 
 /// Находит все использования имени `symbol` в файлах под `root`.

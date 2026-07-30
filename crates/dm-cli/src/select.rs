@@ -28,14 +28,13 @@ impl Selection {
         let mut names: Vec<String> = all_in_order.to_vec();
 
         // 1. Профиль: если задан, оставляем только сервисы из профиля.
-        if let Some(profile) = &self.profile {
-            if let Some(p) = config.profiles.get(profile) {
-                if !p.services.is_empty() {
-                    let allowed: std::collections::HashSet<&str> =
-                        p.services.iter().map(|s| s.as_str()).collect();
-                    names.retain(|n| allowed.contains(n.as_str()));
-                }
-            }
+        if let Some(profile) = &self.profile
+            && let Some(p) = config.profiles.get(profile)
+            && !p.services.is_empty()
+        {
+            let allowed: std::collections::HashSet<&str> =
+                p.services.iter().map(|s| s.as_str()).collect();
+            names.retain(|n| allowed.contains(n.as_str()));
         }
 
         // 2. Теги: оставляем сервисы, у которых есть хотя бы один из тегов.

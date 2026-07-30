@@ -45,7 +45,9 @@ pub fn find(name: &str) -> Option<Template> {
 
 fn bun_elysia() -> Template {
     let mut files = BTreeMap::new();
-    files.insert("package.json", r#"{
+    files.insert(
+        "package.json",
+        r#"{
   "name": "{{name}}",
   "version": "0.1.0",
   "type": "module",
@@ -60,8 +62,11 @@ fn bun_elysia() -> Template {
     "@types/bun": "latest"
   }
 }
-"#);
-    files.insert("src/index.ts", r#"import { Elysia } from "elysia";
+"#,
+    );
+    files.insert(
+        "src/index.ts",
+        r#"import { Elysia } from "elysia";
 
 /**
  * Базовый эндпоинт здоровья для проверки, что сервис поднялся.
@@ -73,15 +78,19 @@ const app = new Elysia()
   .listen(3000);
 
 console.log(`🦊 {{name}} запущен на http://localhost:3000`);
-"#);
-    files.insert("src/index.test.ts", r#"import { describe, it, expect } from "bun:test";
+"#,
+    );
+    files.insert(
+        "src/index.test.ts",
+        r#"import { describe, it, expect } from "bun:test";
 
 describe("health", () => {
   it("should be ok", () => {
     expect({ status: "ok" }).toEqual({ status: "ok" });
   });
 });
-"#);
+"#,
+    );
     files.insert(".gitignore", "node_modules/\n*.log\n.env\n");
 
     Template {
@@ -98,7 +107,9 @@ describe("health", () => {
 
 fn bun_express() -> Template {
     let mut files = BTreeMap::new();
-    files.insert("package.json", r#"{
+    files.insert(
+        "package.json",
+        r#"{
   "name": "{{name}}",
   "version": "0.1.0",
   "type": "module",
@@ -114,8 +125,11 @@ fn bun_express() -> Template {
     "@types/bun": "latest"
   }
 }
-"#);
-    files.insert("src/index.ts", r#"import express from "express";
+"#,
+    );
+    files.insert(
+        "src/index.ts",
+        r#"import express from "express";
 
 const app = express();
 const PORT = 3000;
@@ -125,13 +139,17 @@ app.get("/health", (_req, res) => res.json({ status: "ok" }));
 app.get("/", (_req, res) => res.json({ hello: "{{name}}" }));
 
 app.listen(PORT, () => console.log(`🚀 {{name}} на http://localhost:${PORT}`));
-"#);
-    files.insert("src/index.test.ts", r#"import { describe, it, expect } from "bun:test";
+"#,
+    );
+    files.insert(
+        "src/index.test.ts",
+        r#"import { describe, it, expect } from "bun:test";
 
 describe("server", () => {
   it("starts", () => expect(true).toBe(true));
 });
-"#);
+"#,
+    );
     files.insert(".gitignore", "node_modules/\n*.log\n.env\n");
 
     Template {
@@ -273,7 +291,9 @@ async fn health() -> Json<Value> {
 
 fn next_shadcn() -> Template {
     let mut files = BTreeMap::new();
-    files.insert("package.json", r#"{
+    files.insert(
+        "package.json",
+        r#"{
   "name": "{{name}}",
   "version": "0.1.0",
   "private": true,
@@ -294,7 +314,8 @@ fn next_shadcn() -> Template {
     "@types/node": "^20"
   }
 }
-"#);
+"#,
+    );
     files.insert(
         "app/page.tsx",
         r#"import { CheckCircle } from "lucide-react";
@@ -350,7 +371,9 @@ export default config;
 
 fn react_vite() -> Template {
     let mut files = BTreeMap::new();
-    files.insert("package.json", r#"{
+    files.insert(
+        "package.json",
+        r#"{
   "name": "{{name}}",
   "version": "0.1.0",
   "private": true,
@@ -372,7 +395,8 @@ fn react_vite() -> Template {
     "@types/react": "^18"
   }
 }
-"#);
+"#,
+    );
     files.insert(
         "index.html",
         r#"<!DOCTYPE html>
@@ -478,7 +502,11 @@ def test_health():
 ///
 /// `name` — имя проекта/сервиса (подставляется в `{{name}}`).
 /// Возвращает список созданных файлов.
-pub fn apply(template: &Template, dest: &std::path::Path, name: &str) -> std::io::Result<Vec<std::path::PathBuf>> {
+pub fn apply(
+    template: &Template,
+    dest: &std::path::Path,
+    name: &str,
+) -> std::io::Result<Vec<std::path::PathBuf>> {
     let mut created = Vec::new();
     for (rel, content) in &template.files {
         let rendered = content.replace("{{name}}", name);

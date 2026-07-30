@@ -8,9 +8,9 @@
 //! - C/C++ → `clang-format -i` (если есть .clang-format)
 
 use crate::commands::load_project_config;
-use crate::output::{print_system, success_style, warn_style, println_styled};
-use dm_core::project::ServiceLanguage;
+use crate::output::{print_system, println_styled, success_style, warn_style};
 use dm_core::DmResult;
+use dm_core::project::ServiceLanguage;
 use std::process::Command;
 
 /// Точка входа команды.
@@ -29,10 +29,7 @@ pub async fn run() -> DmResult<()> {
                 &format!("  ! {name}: форматтер вернул код {code}"),
                 warn_style(),
             ),
-            Err(e) => println_styled(
-                &format!("  ✗ {name}: {e}"),
-                crate::output::error_style(),
-            ),
+            Err(e) => println_styled(&format!("  ✗ {name}: {e}"), crate::output::error_style()),
         }
     }
     Ok(())

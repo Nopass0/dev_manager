@@ -3,7 +3,7 @@
 //! `dm gen diagram` — Mermaid-диаграмма архитектуры: сервисы и их зависимости
 //! (из `depends_on` + реальных cross-service импортов через граф).
 
-use crate::commands::{load_project_config, GenArgs};
+use crate::commands::{GenArgs, load_project_config};
 use crate::output::print_system;
 use dm_core::DmResult;
 use std::path::Path;
@@ -27,7 +27,10 @@ async fn run_diagram() -> DmResult<()> {
 
     // 1. Узлы сервисов с подписями языка.
     for (name, svc) in &config.services {
-        println!("  {name}[\"{name}<br/><small>{}</small>\"]", svc.language.label());
+        println!(
+            "  {name}[\"{name}<br/><small>{}</small>\"]",
+            svc.language.label()
+        );
     }
 
     // 2. Рёбра из явных depends_on.
@@ -77,10 +80,10 @@ fn imports_into(
             continue;
         }
         for &imported_idx in &node.import_indices {
-            if let Some(imported) = graph.files.get(imported_idx) {
-                if imported.path.starts_with(b_dir) {
-                    return true;
-                }
+            if let Some(imported) = graph.files.get(imported_idx)
+                && imported.path.starts_with(b_dir)
+            {
+                return true;
             }
         }
     }

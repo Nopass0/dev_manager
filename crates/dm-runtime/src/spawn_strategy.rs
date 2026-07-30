@@ -17,18 +17,15 @@ use std::path::Path;
 /// Возвращает строку команды. Если ничего не удалось определить — возвращает
 /// пустую строку (вызывающий код решит, как реагировать).
 pub fn resolve_run_command(svc: &Service, explicit: Option<&str>) -> String {
-    if let Some(cmd) = explicit {
-        if !cmd.trim().is_empty() {
-            return cmd.to_string();
-        }
+    if let Some(cmd) = explicit
+        && !cmd.trim().is_empty()
+    {
+        return cmd.to_string();
     }
     if let Some(detected) = detect_by_markers(&svc.path) {
         return detected;
     }
-    svc.language
-        .default_run_command()
-        .unwrap_or("")
-        .to_string()
+    svc.language.default_run_command().unwrap_or("").to_string()
 }
 
 /// Пытается подобрать команду запуска по известным файлам-маркерам.

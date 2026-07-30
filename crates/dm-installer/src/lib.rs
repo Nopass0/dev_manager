@@ -90,9 +90,8 @@ fn copy_binary(src: &Path, dst: &Path) -> DmResult<()> {
 fn target_dir() -> DmResult<PathBuf> {
     if cfg!(windows) {
         // %LOCALAPPDATA%\Programs\dm
-        let local = std::env::var("LOCALAPPDATA").map_err(|_| {
-            DmError::UnsupportedPlatform("LOCALAPPDATA не задана".to_string())
-        })?;
+        let local = std::env::var("LOCALAPPDATA")
+            .map_err(|_| DmError::UnsupportedPlatform("LOCALAPPDATA не задана".to_string()))?;
         Ok(PathBuf::from(local).join("Programs").join("dm"))
     } else {
         // ~/.local/bin (стандарт XDG); создаётся если нет.
@@ -141,7 +140,11 @@ fn add_to_unix_shell_rc(dir: &str) -> DmResult<bool> {
         .to_path_buf();
 
     // Проверяем .bashrc и .zshrc (если файлы существуют — дописываем).
-    let candidates = [home.join(".bashrc"), home.join(".zshrc"), home.join(".profile")];
+    let candidates = [
+        home.join(".bashrc"),
+        home.join(".zshrc"),
+        home.join(".profile"),
+    ];
     let marker = "# added by dm installer";
     let line = format!(r#"{marker} export PATH="$HOME/.local/bin:$PATH""#);
     let _ = dir; // строка PATH фиксирована для ~/.local/bin

@@ -1,7 +1,7 @@
 //! `dm git stash|branch|rebase` — cross-repo git-операции.
 
-use crate::commands::{load_project_config, GitAction, GitArgs};
-use crate::output::{print_system, success_style, warn_style, println_styled};
+use crate::commands::{GitAction, GitArgs, load_project_config};
+use crate::output::{print_system, println_styled, success_style, warn_style};
 use dm_core::DmResult;
 use dm_vcs::{branch_all, collect_repo_paths, rebase_all, stash_all};
 
@@ -34,9 +34,15 @@ pub async fn run(args: GitArgs) -> DmResult<()> {
         println!("{} {} — {}", marker, r.repo.display(), r.note);
     }
     if ok == results.len() {
-        println_styled(&format!("готово: {}/{}", ok, results.len()), success_style());
+        println_styled(
+            &format!("готово: {}/{}", ok, results.len()),
+            success_style(),
+        );
     } else {
-        println_styled(&format!("с ошибками: {}/{}", ok, results.len()), warn_style());
+        println_styled(
+            &format!("с ошибками: {}/{}", ok, results.len()),
+            warn_style(),
+        );
     }
     Ok(())
 }

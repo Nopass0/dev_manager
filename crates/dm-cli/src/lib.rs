@@ -161,7 +161,9 @@ pub async fn run(cli: Cli) -> DmResult<()> {
     if let Some(env) = &cli.env {
         // Также экспонируем через std::env, чтобы load_project_config подхватил.
         // Безопасно: мы в начале процесса.
-        unsafe { std::env::set_var(dm_core::config::DM_ENV_VAR, env); }
+        unsafe {
+            std::env::set_var(dm_core::config::DM_ENV_VAR, env);
+        }
     }
     match cli.command {
         Command::Init(args) => commands::init::run(args).await,

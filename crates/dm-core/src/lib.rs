@@ -20,10 +20,10 @@ pub mod project;
 
 /// Переэкспорт часто используемых типов для удобства потребителей.
 pub use config::{
-    Config, DeployTarget, HealthCheckConfig, HealthCheckKind, LinterConfig, ProfileConfig,
-    RestartBehavior, RestartPolicy, RuntimeConfig, ServiceConfig, TestsConfig, CONFIG_FILENAME,
-    CONFIG_FILENAME_ALT,
+    CONFIG_FILENAME, CONFIG_FILENAME_ALT, Config, DeployTarget, HealthCheckConfig, HealthCheckKind,
+    LinterConfig, ProfileConfig, RestartBehavior, RestartPolicy, RuntimeConfig, ServiceConfig,
+    TestsConfig,
 };
-pub use env::{parse_unified_env, write_service_env, EnvSection, UnifiedEnv};
+pub use env::{EnvSection, UnifiedEnv, parse_unified_env, write_service_env};
 pub use error::{DmError, DmResult};
 pub use project::{Project, Service, ServiceLanguage};

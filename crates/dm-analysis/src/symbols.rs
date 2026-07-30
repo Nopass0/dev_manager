@@ -57,7 +57,12 @@ pub struct Symbol {
 impl Symbol {
     /// Создаёт символ с обязательными полями; опциональные — по умолчанию.
     #[inline]
-    pub fn new(name: impl Into<String>, kind: SymbolKind, file: PathBuf, start_line: usize) -> Self {
+    pub fn new(
+        name: impl Into<String>,
+        kind: SymbolKind,
+        file: PathBuf,
+        start_line: usize,
+    ) -> Self {
         Self {
             name: name.into(),
             kind,

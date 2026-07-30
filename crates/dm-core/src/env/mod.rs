@@ -19,4 +19,4 @@
 
 pub mod sync;
 
-pub use sync::{parse_unified_env, write_service_env, EnvSection, UnifiedEnv};
+pub use sync::{EnvSection, UnifiedEnv, parse_unified_env, write_service_env};

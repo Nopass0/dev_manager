@@ -1,9 +1,9 @@
 //! `dm config list|get|edit|validate` — управление dm.yaml из CLI.
 
 use crate::commands::{ConfigAction, ConfigArgs};
-use crate::output::{print_system, success_style, println_styled};
-use dm_core::config::{discover_config, load_config};
+use crate::output::{print_system, println_styled, success_style};
 use dm_core::DmResult;
+use dm_core::config::{discover_config, load_config};
 use std::env;
 
 // Переэкспорт для удобства внутри файла.
@@ -30,7 +30,11 @@ pub async fn run(args: ConfigArgs) -> DmResult<()> {
         ConfigAction::Edit => {
             let path = discover_config(&env::current_dir()?)?;
             let editor = env::var("EDITOR").unwrap_or_else(|_| {
-                if cfg!(windows) { "notepad".to_string() } else { "vi".to_string() }
+                if cfg!(windows) {
+                    "notepad".to_string()
+                } else {
+                    "vi".to_string()
+                }
             });
             let status = std::process::Command::new(&editor)
                 .arg(&path)
@@ -49,8 +53,14 @@ pub async fn run(args: ConfigArgs) -> DmResult<()> {
             let mut cfg = load_config(&path)?;
             cfg.validate()?;
             println_styled("✓ конфигурация корректна", success_style());
-            println_styled(&format!("  сервисов: {}", cfg.services.len()), crate::output::dim_style());
-            println_styled(&format!("  профилей: {}", cfg.profiles.len()), crate::output::dim_style());
+            println_styled(
+                &format!("  сервисов: {}", cfg.services.len()),
+                crate::output::dim_style(),
+            );
+            println_styled(
+                &format!("  профилей: {}", cfg.profiles.len()),
+                crate::output::dim_style(),
+            );
             Ok(())
         }
     }
@@ -109,10 +119,11 @@ fn find_service_field(raw: &str, svc: &str, field: &str) -> Option<String> {
         if indent == 2 {
             in_svc = false;
         }
-        if in_svc && indent == 4 {
-            if let Some(rest) = trimmed.strip_prefix(&format!("{field}:")) {
-                return Some(rest.trim().to_string());
-            }
+        if in_svc
+            && indent == 4
+            && let Some(rest) = trimmed.strip_prefix(&format!("{field}:"))
+        {
+            return Some(rest.trim().to_string());
         }
     }
     None

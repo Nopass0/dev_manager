@@ -1,6 +1,6 @@
 //! `dm install` — установка текущего бинарника в PATH.
 
-use crate::output::{print_system, success_style, println_styled};
+use crate::output::{print_system, println_styled, success_style};
 use dm_core::DmResult;
 use dm_installer::install;
 

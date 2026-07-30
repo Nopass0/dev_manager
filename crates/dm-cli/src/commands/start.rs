@@ -5,11 +5,11 @@
 //! `--dry-run` показывает план запуска без выполнения; `--wait` дожидается
 //! health-check всех запускаемых сервисов.
 
-use crate::commands::{load_project_config, PREFIX_SYS, StartArgs};
+use crate::commands::{PREFIX_SYS, StartArgs, load_project_config};
 use crate::output::{print_log_line, print_system, println_styled, warn_style};
 use crate::select::Selection;
 use dm_core::DmResult;
-use dm_runtime::supervisor::{project_from_config, Supervisor, SupervisorOptions};
+use dm_runtime::supervisor::{Supervisor, SupervisorOptions, project_from_config};
 use tokio::signal;
 use tokio::sync::mpsc;
 
@@ -35,7 +35,10 @@ pub async fn run(args: StartArgs) -> DmResult<()> {
     let selected = selection.apply(&config, &all_in_order);
 
     if selected.is_empty() {
-        println_styled("Нет сервисов для запуска по заданным фильтрам.", warn_style());
+        println_styled(
+            "Нет сервисов для запуска по заданным фильтрам.",
+            warn_style(),
+        );
         return Ok(());
     }
 
@@ -83,14 +86,13 @@ pub async fn run(args: StartArgs) -> DmResult<()> {
 
     // Устанавливаем лимиты ресурсов для сервисов (для monitor'а).
     for name in &selected {
-        if let Some(svc) = config.services.get(name) {
-            if let Some(res) = &svc.resources {
-                if res.memory_mb > 0 {
-                    supervisor
-                        .set_resource_limits(name, res.memory_mb, res.on_exceed)
-                        .await;
-                }
-            }
+        if let Some(svc) = config.services.get(name)
+            && let Some(res) = &svc.resources
+            && res.memory_mb > 0
+        {
+            supervisor
+                .set_resource_limits(name, res.memory_mb, res.on_exceed)
+                .await;
         }
     }
 
@@ -142,7 +144,9 @@ pub async fn run(args: StartArgs) -> DmResult<()> {
 
     // Ждём Ctrl+C — затем корректно гасим всё дерево процессов.
     signal::ctrl_c().await.ok();
-    print_system(&format!("{PREFIX_SYS} получен Ctrl+C, останавливаю сервисы…"));
+    print_system(&format!(
+        "{PREFIX_SYS} получен Ctrl+C, останавливаю сервисы…"
+    ));
     supervisor.shutdown().await;
     drop(log_tx);
     let _ = printer.await;
@@ -151,7 +155,10 @@ pub async fn run(args: StartArgs) -> DmResult<()> {
 }
 
 /// Разбирает секцию `notify:` (serde_yaml::Mapping) в `NotifyConfig`.
-fn parse_notify_config(mapping: &serde_yaml::Mapping, project_name: &str) -> dm_runtime::NotifyConfig {
+fn parse_notify_config(
+    mapping: &serde_yaml::Mapping,
+    project_name: &str,
+) -> dm_runtime::NotifyConfig {
     let mut cfg = dm_runtime::NotifyConfig {
         project_name: Some(project_name.to_string()),
         ..Default::default()
@@ -175,7 +182,9 @@ async fn run_before_start_hooks(
     root: &std::path::Path,
 ) {
     for name in selected {
-        let Some(svc) = config.services.get(name) else { continue };
+        let Some(svc) = config.services.get(name) else {
+            continue;
+        };
         if svc.before_start.is_empty() {
             continue;
         }
@@ -229,8 +238,7 @@ async fn compute_affected(
         }
     };
     // Абсолютные пути изменённых файлов.
-    let changed_abs: Vec<std::path::PathBuf> =
-        changed.iter().map(|f| root.join(f)).collect();
+    let changed_abs: Vec<std::path::PathBuf> = changed.iter().map(|f| root.join(f)).collect();
 
     let graph = dm_analysis::DependencyGraph::build(root);
 
@@ -267,7 +275,9 @@ async fn wait_for_health(config: &dm_core::Config, selected: &[String], root: &s
     use dm_core::config::HealthCheckKind;
     print_system("ожидание health-check (--wait)…");
     for name in selected {
-        let Some(svc) = config.services.get(name) else { continue };
+        let Some(svc) = config.services.get(name) else {
+            continue;
+        };
         let Some(hc) = &svc.health else { continue };
         let warmup = std::time::Duration::from_secs(hc.warmup_secs);
         let interval = std::time::Duration::from_secs(hc.interval_secs);
@@ -314,7 +324,8 @@ async fn http_check(url: &str) -> bool {
         Some(u) => u,
         None => return false,
     };
-    let mut stream = match tokio::net::TcpStream::connect((parsed.host.as_str(), parsed.port)).await {
+    let mut stream = match tokio::net::TcpStream::connect((parsed.host.as_str(), parsed.port)).await
+    {
         Ok(s) => s,
         Err(_) => return false,
     };

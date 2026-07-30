@@ -3,8 +3,8 @@
 //! Обнаруживает compose-файл (из `docker.compose_file` или `docker-compose.yml`
 //! / `compose.yaml` в корне) и вызывает `docker compose` (v2) или `docker-compose` (v1).
 
-use crate::commands::{load_project_config, DockerAction, DockerArgs};
-use crate::output::{print_system, success_style, println_styled};
+use crate::commands::{DockerAction, DockerArgs, load_project_config};
+use crate::output::{print_system, println_styled, success_style};
 use dm_core::DmResult;
 use std::path::Path;
 use std::process::Command;
@@ -49,7 +49,12 @@ fn resolve_compose_file(root: &Path, configured: &str) -> std::path::PathBuf {
     if primary.exists() {
         return primary;
     }
-    for alt in ["docker-compose.yml", "docker-compose.yaml", "compose.yaml", "compose.yml"] {
+    for alt in [
+        "docker-compose.yml",
+        "docker-compose.yaml",
+        "compose.yaml",
+        "compose.yml",
+    ] {
         let p = root.join(alt);
         if p.exists() {
             return p;
@@ -59,8 +64,14 @@ fn resolve_compose_file(root: &Path, configured: &str) -> std::path::PathBuf {
 }
 
 /// Выбирает бинарник compose (v2 `docker compose` предпочтительнее) и базовые args.
-fn pick_compose_binary(project_name: &Option<String>, compose_file: &Path) -> (String, Vec<String>) {
-    let mut base = vec!["-f".to_string(), compose_file.to_string_lossy().into_owned()];
+fn pick_compose_binary(
+    project_name: &Option<String>,
+    compose_file: &Path,
+) -> (String, Vec<String>) {
+    let mut base = vec![
+        "-f".to_string(),
+        compose_file.to_string_lossy().into_owned(),
+    ];
     if let Some(pn) = project_name {
         base.push("-p".into());
         base.push(pn.clone());

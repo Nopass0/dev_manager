@@ -20,7 +20,7 @@ pub mod supervisor;
 pub mod watcher;
 
 pub use logs::{LogLevel, LogLine, ServiceStatus};
-pub use monitor::{check_memory, rss_mb, MemoryCheck};
+pub use monitor::{MemoryCheck, check_memory, rss_mb};
 pub use notify::{NotifyConfig, NotifyEvent};
 pub use process::{ManagedProcess, ProcessExit};
 pub use supervisor::{Supervisor, SupervisorOptions};

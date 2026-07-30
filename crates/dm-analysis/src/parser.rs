@@ -51,7 +51,7 @@ pub fn parser_for_extension(ext: &str) -> Option<Arc<dyn LanguageParser>> {
         Arc::new(languages::typescript::TypeScriptParser::new()),
         Arc::new(languages::go::GoParser::new()),
     ];
-    parsers.into_iter().find(|p| p.extensions().iter().any(|e| *e == ext))
+    parsers.into_iter().find(|p| p.extensions().contains(&ext))
 }
 
 /// Разбирает один файл с диска и возвращает [`ParsedFile`].

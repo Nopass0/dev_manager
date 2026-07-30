@@ -11,7 +11,11 @@ use std::fmt::Write;
 ///
 /// `version` — новая версия; `date` — строка даты (например `2026-07-27`);
 /// `commits` — уже разобранные conventional-commits этого релиза.
-pub fn render_release_section(version: Version, date: &str, commits: &[ConventionalCommit]) -> String {
+pub fn render_release_section(
+    version: Version,
+    date: &str,
+    commits: &[ConventionalCommit],
+) -> String {
     let mut out = String::new();
     let _ = writeln!(out, "## [{version}] — {date}\n");
 
@@ -26,9 +30,14 @@ pub fn render_release_section(version: Version, date: &str, commits: &[Conventio
     }
 
     // Остальные группы по типам, сохраняя канонический порядок.
-    let order = ["feat", "fix", "perf", "refactor", "docs", "test", "build", "ci", "chore", "style"];
+    let order = [
+        "feat", "fix", "perf", "refactor", "docs", "test", "build", "ci", "chore", "style",
+    ];
     for kind in order {
-        let group: Vec<&ConventionalCommit> = commits.iter().filter(|c| c.kind == kind && !c.breaking).collect();
+        let group: Vec<&ConventionalCommit> = commits
+            .iter()
+            .filter(|c| c.kind == kind && !c.breaking)
+            .collect();
         if group.is_empty() {
             continue;
         }
@@ -58,7 +67,11 @@ mod tests {
             ConventionalCommit::parse("feat!: новая схема БД").unwrap(),
         ];
         let section = render_release_section(
-            Version { major: 1, minor: 1, patch: 0 },
+            Version {
+                major: 1,
+                minor: 1,
+                patch: 0,
+            },
             "2026-07-27",
             &commits,
         );

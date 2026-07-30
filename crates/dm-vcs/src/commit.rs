@@ -73,6 +73,6 @@ mod tests {
         // has_changes вызовет run_git; в не-репо git вернёт код 128 → ошибка.
         let res = commit_in_repo(&tmp, "msg").await;
         let _ = std::fs::remove_dir_all(&tmp);
-        assert!(res.is_err() || res.unwrap().committed == false);
+        assert!(res.is_err() || !res.unwrap().committed);
     }
 }

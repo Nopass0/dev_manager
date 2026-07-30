@@ -76,7 +76,9 @@ impl ConventionalCommit {
 }
 
 /// Группирует коммиты по типам в порядке, удобном для changelog.
-pub fn group_by_type(commits: &[ConventionalCommit]) -> BTreeMap<&'static str, Vec<&ConventionalCommit>> {
+pub fn group_by_type(
+    commits: &[ConventionalCommit],
+) -> BTreeMap<&'static str, Vec<&ConventionalCommit>> {
     // BTreeMap сортирует по ключу; используем индекс типа как порядок.
     let order: std::collections::HashMap<&str, usize> = COMMIT_TYPES
         .iter()

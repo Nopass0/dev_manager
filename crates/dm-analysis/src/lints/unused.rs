@@ -68,9 +68,18 @@ fn is_entry_point_or_test(name: &str) -> bool {
     // Фикстуры.
     matches!(
         name,
-        "setUp" | "tearDown" | "setup" | "teardown"
-            | "beforeEach" | "afterEach" | "beforeAll" | "afterAll"
-            | "before_each" | "after_each" | "before_all" | "after_all"
+        "setUp"
+            | "tearDown"
+            | "setup"
+            | "teardown"
+            | "beforeEach"
+            | "afterEach"
+            | "beforeAll"
+            | "afterAll"
+            | "before_each"
+            | "after_each"
+            | "before_all"
+            | "after_all"
     )
 }
 
@@ -109,7 +118,7 @@ mod tests {
         )];
         // corpus включает текст проекта с определением И использованием (≥2 вхождений).
         let corpus = vec![
-            "fn used() {}".to_string(), // определение
+            "fn used() {}".to_string(),    // определение
             "let x = used();".to_string(), // использование
         ];
         assert!(find_unused(&syms, &corpus).is_empty());
@@ -119,7 +128,12 @@ mod tests {
     fn does_not_flag_main_and_tests() {
         let syms = vec![
             Symbol::new("main", SymbolKind::Function, PathBuf::from("a.rs"), 1),
-            Symbol::new("TestHealth", SymbolKind::Function, PathBuf::from("a_test.go"), 1),
+            Symbol::new(
+                "TestHealth",
+                SymbolKind::Function,
+                PathBuf::from("a_test.go"),
+                1,
+            ),
             Symbol::new("setUp", SymbolKind::Function, PathBuf::from("a.py"), 1),
         ];
         // Все три — точки входа/тесты, corpus пустой, но флагаться не должны.

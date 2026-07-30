@@ -3,8 +3,8 @@
 use crate::commands::load_project_config;
 use crate::output::{build_status_table, print_system, println_styled, success_style};
 use dm_core::DmResult;
-use dm_runtime::supervisor::project_from_config;
 use dm_runtime::logs::ServiceStatus;
+use dm_runtime::supervisor::project_from_config;
 
 /// Точка входа команды.
 pub async fn run() -> DmResult<()> {
@@ -13,7 +13,10 @@ pub async fn run() -> DmResult<()> {
 
     print_system(&format!("проект: {}", project.name));
     print_system(&format!("корень:  {}", root.display()));
-    println_styled(&format!("сервисов: {}", project.services.len()), success_style());
+    println_styled(
+        &format!("сервисов: {}", project.services.len()),
+        success_style(),
+    );
 
     // Таблица: имя, язык, команда, «статус» (для офлайн-команды — pending).
     let rows: Vec<(String, ServiceStatus)> = project

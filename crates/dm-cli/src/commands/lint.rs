@@ -3,13 +3,13 @@
 //! Читает все исходники сервисов, разбирает символы и прогоняет включённые
 //! линтеры. Результат — таблица замечаний.
 
-use crate::commands::{load_project_config, TargetArgs};
-use crate::output::{print_system, success_style, println_styled};
+use crate::commands::{TargetArgs, load_project_config};
+use crate::output::{print_system, println_styled, success_style};
 use comfy_table::{ContentArrangement, Table};
-use dm_analysis::lints::{run_all, LintCategory, LintFinding, LintSet};
-use dm_analysis::{parse_file, Symbol};
+use dm_analysis::lints::{LintCategory, LintFinding, LintSet, run_all};
+use dm_analysis::{Symbol, parse_file};
 use dm_core::DmResult;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Точка входа команды.
 pub async fn run(args: TargetArgs) -> DmResult<()> {
@@ -32,7 +32,11 @@ pub async fn run(args: TargetArgs) -> DmResult<()> {
                 .ok_or_else(|| dm_core::DmError::ServiceNotFound(n.clone()))?;
             vec![(n.clone(), svc.clone())]
         }
-        None => config.services.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+        None => config
+            .services
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect(),
     };
 
     for (name, svc) in &targets {
@@ -46,7 +50,10 @@ pub async fn run(args: TargetArgs) -> DmResult<()> {
         println_styled("замечаний не найдено ✨", success_style());
         return Ok(());
     }
-    println_styled(&format!("найдено {} замечаний:", findings.len()), success_style());
+    println_styled(
+        &format!("найдено {} замечаний:", findings.len()),
+        success_style(),
+    );
     let table = build_findings_table(&findings);
     println!("{table}");
     Ok(())
@@ -65,7 +72,10 @@ fn collect_symbols(dir: &Path, symbols: &mut Vec<Symbol>, corpus: &mut Vec<Strin
         if meta.is_dir() {
             // Пропускаем типичные шумные каталоги.
             let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            if matches!(name, ".git" | "target" | "node_modules" | "dist" | "build" | ".next" | "out") {
+            if matches!(
+                name,
+                ".git" | "target" | "node_modules" | "dist" | "build" | ".next" | "out"
+            ) {
                 continue;
             }
             collect_symbols(&path, symbols, corpus);
@@ -100,13 +110,20 @@ fn build_findings_table(findings: &[LintFinding]) -> Table {
 }
 
 /// Сокращает длинный путь до последних двух компонентов для компактности.
-fn short_path(p: &PathBuf) -> String {
+fn short_path(p: &std::path::Path) -> String {
     let comps: Vec<_> = p.components().collect();
     let n = comps.len();
     if n <= 2 {
         p.display().to_string()
     } else {
-        format!("…/{}", comps[n - 2..].iter().map(|c| c.as_os_str().to_string_lossy()).collect::<Vec<_>>().join(std::path::MAIN_SEPARATOR_STR))
+        format!(
+            "…/{}",
+            comps[n - 2..]
+                .iter()
+                .map(|c| c.as_os_str().to_string_lossy())
+                .collect::<Vec<_>>()
+                .join(std::path::MAIN_SEPARATOR_STR)
+        )
     }
 }
 

@@ -18,7 +18,8 @@ pub const DEFAULT_REPO: &str = "Nopass0/dev_manager";
 /// 3. Распаковывает `dm` в `~/.local/bin`.
 /// 4. Добавляет каталог в PATH через `~/.bashrc`/`~/.zshrc`.
 pub fn bash_installer(repo: &str) -> String {
-    format!(r#"#!/usr/bin/env sh
+    format!(
+        r#"#!/usr/bin/env sh
 # Dev Manager (dm) — автоматический установщик для Linux/macOS.
 # Запуск: curl -fsSL https://raw.githubusercontent.com/{repo}/main/scripts/install.sh | sh
 set -e
@@ -71,7 +72,8 @@ register "$HOME/.profile"
 echo "Установлено: $BIN_DIR/dm"
 echo "Перезапустите терминал или выполните: export PATH=\"$HOME/.local/bin:$PATH\""
 "$BIN_DIR/dm" --version || true
-"#)
+"#
+    )
 }
 
 /// Возвращает PowerShell-скрипт установки (Windows).
@@ -81,7 +83,8 @@ echo "Перезапустите терминал или выполните: exp
 /// 2. Распаковывает в `%LOCALAPPDATA%\Programs\dm`.
 /// 3. Регистрирует каталог в пользовательском PATH (постоянно + текущая сессия).
 pub fn powershell_installer(repo: &str) -> String {
-    format!(r#"# Dev Manager (dm) — установщик для Windows (PowerShell).
+    format!(
+        r#"# Dev Manager (dm) — установщик для Windows (PowerShell).
 # Запуск: iwr -useb https://raw.githubusercontent.com/{repo}/main/scripts/install.ps1 | iex
 $ErrorActionPreference = 'Stop'
 
@@ -112,7 +115,8 @@ if (($userPath -split ';') -notcontains $InstallDir) {{
 $Exe = Join-Path $InstallDir 'dm.exe'
 Write-Host "Установлено: $Exe"
 & $Exe --version
-"#)
+"#
+    )
 }
 
 #[cfg(test)]

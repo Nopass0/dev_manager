@@ -59,7 +59,7 @@ impl LanguageParser for RustParser {
 /// Рекурсивно обходит AST, собирая символы верхних уровней.
 ///
 /// Идём и по модулю, и по блокам `impl`/`trait` — чтобы достать методы.
-fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
+fn walk(node: &Node, source: &str, file: &std::path::Path, out: &mut Vec<Symbol>) {
     match node.kind() {
         "function_item" => {
             if let Some(sym) = build_function(node, source, file) {
@@ -68,7 +68,12 @@ fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
         }
         "struct_item" => {
             if let Some(name) = named_node_name(node, source) {
-                let mut sym = Symbol::new(name, SymbolKind::Struct, file.clone(), start_row(node));
+                let mut sym = Symbol::new(
+                    name,
+                    SymbolKind::Struct,
+                    file.to_path_buf(),
+                    start_row(node),
+                );
                 sym.end_line = end_row(node);
                 sym.doc = doc_above(node, source);
                 out.push(sym);
@@ -76,7 +81,8 @@ fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
         }
         "enum_item" => {
             if let Some(name) = named_node_name(node, source) {
-                let mut sym = Symbol::new(name, SymbolKind::Class, file.clone(), start_row(node));
+                let mut sym =
+                    Symbol::new(name, SymbolKind::Class, file.to_path_buf(), start_row(node));
                 sym.end_line = end_row(node);
                 sym.doc = doc_above(node, source);
                 out.push(sym);
@@ -84,7 +90,8 @@ fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
         }
         "trait_item" => {
             if let Some(name) = named_node_name(node, source) {
-                let mut sym = Symbol::new(name, SymbolKind::Class, file.clone(), start_row(node));
+                let mut sym =
+                    Symbol::new(name, SymbolKind::Class, file.to_path_buf(), start_row(node));
                 sym.end_line = end_row(node);
                 sym.doc = doc_above(node, source);
                 out.push(sym);
@@ -92,7 +99,12 @@ fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
         }
         "const_item" | "static_item" => {
             if let Some(name) = named_node_name(node, source) {
-                let mut sym = Symbol::new(name, SymbolKind::Variable, file.clone(), start_row(node));
+                let mut sym = Symbol::new(
+                    name,
+                    SymbolKind::Variable,
+                    file.to_path_buf(),
+                    start_row(node),
+                );
                 sym.doc = doc_above(node, source);
                 out.push(sym);
             }
@@ -107,9 +119,14 @@ fn walk(node: &Node, source: &str, file: &PathBuf, out: &mut Vec<Symbol>) {
 }
 
 /// Строит символ-функцию из узла `function_item`, включая сигнатуру аргументов.
-fn build_function(node: &Node, source: &str, file: &PathBuf) -> Option<Symbol> {
+fn build_function(node: &Node, source: &str, file: &std::path::Path) -> Option<Symbol> {
     let name = named_node_name(node, source)?;
-    let mut sym = Symbol::new(name, SymbolKind::Function, file.clone(), start_row(node));
+    let mut sym = Symbol::new(
+        name,
+        SymbolKind::Function,
+        file.to_path_buf(),
+        start_row(node),
+    );
     sym.end_line = end_row(node);
     // Сигнатура аргументов: `(a: i32, b: &str)`.
     if let Some(params) = node.child_by_field_name("parameters") {
@@ -138,10 +155,7 @@ fn doc_above(node: &Node, source: &str) -> Option<String> {
             "line_comment" => {
                 let raw = node_text(&sib, source);
                 // `///` или `//!`
-                let cleaned = raw
-                    .trim_start_matches('/')
-                    .trim_start()
-                    .trim_end();
+                let cleaned = raw.trim_start_matches('/').trim_start().trim_end();
                 if !cleaned.is_empty() {
                     lines.insert(0, cleaned.to_string());
                 }

@@ -3,10 +3,10 @@
 //! Анализирует conventional-commits с прошлого тега, предлагает/применяет bump,
 //! генерирует секцию CHANGELOG. `--changelog-only` печатает текст без тегирования.
 
-use crate::commands::{load_project_config, ReleaseArgs};
+use crate::commands::{ReleaseArgs, load_project_config};
 use crate::output::{print_system, println_styled, success_style};
 use dm_core::DmResult;
-use dm_vcs::{render_release_section, run_git, ConventionalCommit, Version};
+use dm_vcs::{ConventionalCommit, Version, render_release_section, run_git};
 use std::path::Path;
 
 /// Точка входа команды.
@@ -28,7 +28,11 @@ pub async fn run(args: ReleaseArgs) -> DmResult<()> {
     let current = last_tag
         .as_deref()
         .and_then(Version::parse)
-        .unwrap_or(Version { major: 0, minor: 1, patch: 0 });
+        .unwrap_or(Version {
+            major: 0,
+            minor: 1,
+            patch: 0,
+        });
     let next = current.bumped(bump);
 
     // Собираем conventional-commits с прошлого тега (или всю историю, если тегов нет).
@@ -42,7 +46,10 @@ pub async fn run(args: ReleaseArgs) -> DmResult<()> {
     let section = render_release_section(next, &today, &commits);
 
     if args.changelog_only {
-        println_styled(&format!("Предлагаемая версия: {next} (было {current})"), success_style());
+        println_styled(
+            &format!("Предлагаемая версия: {next} (было {current})"),
+            success_style(),
+        );
         println!("{section}");
         return Ok(());
     }
@@ -51,7 +58,10 @@ pub async fn run(args: ReleaseArgs) -> DmResult<()> {
     let changelog_path = root.join("CHANGELOG.md");
     let header = format!("# Журнал изменений\n\n## [{next}] — {today}\n\n");
     prepend_to_changelog(&changelog_path, &section, &header)?;
-    println_styled(&format!("  ✓ CHANGELOG.md обновлён (версия {next})"), success_style());
+    println_styled(
+        &format!("  ✓ CHANGELOG.md обновлён (версия {next})"),
+        success_style(),
+    );
 
     print_system(&format!(
         "Готово. Для завершения релиза:\n  git add CHANGELOG.md && git commit -m 'chore(release): {next}' && git tag v{next}"
@@ -61,7 +71,9 @@ pub async fn run(args: ReleaseArgs) -> DmResult<()> {
 
 /// Возвращает последний тег вида v1.2.3 или 1.2.3, иначе версию по умолчанию.
 async fn last_version_tag(root: &Path) -> Option<String> {
-    let out = run_git(root, &["describe", "--tags", "--abbrev=0"], false).await.ok()?;
+    let out = run_git(root, &["describe", "--tags", "--abbrev=0"], false)
+        .await
+        .ok()?;
     if out.ok() {
         Some(out.stdout.trim().to_string())
     } else {
@@ -80,9 +92,7 @@ async fn collect_commits_since(root: &Path, since_tag: &str) -> Vec<Conventional
         Ok(o) if o.ok() => o.stdout,
         _ => return Vec::new(),
     };
-    out.lines()
-        .filter_map(|line| ConventionalCommit::parse(line))
-        .collect()
+    out.lines().filter_map(ConventionalCommit::parse).collect()
 }
 
 /// Дописывает секцию релиза в начало CHANGELOG.md (после заголовка).

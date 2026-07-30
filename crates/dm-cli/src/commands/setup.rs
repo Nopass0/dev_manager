@@ -12,10 +12,10 @@
 //! - C# → `dotnet restore`.
 
 use crate::commands::load_project_config;
-use crate::output::{print_system, success_style, warn_style, println_styled};
+use crate::output::{print_system, println_styled, success_style, warn_style};
 use crate::shell;
-use dm_core::project::ServiceLanguage;
 use dm_core::DmResult;
+use dm_core::project::ServiceLanguage;
 use std::path::Path;
 
 /// Точка входа команды.
@@ -57,7 +57,10 @@ pub async fn run() -> DmResult<()> {
         let _ = shell::run("docker compose up -d", &root);
     }
 
-    println_styled("✓ setup завершён — можно запускать `dm start`", success_style());
+    println_styled(
+        "✓ setup завершён — можно запускать `dm start`",
+        success_style(),
+    );
     Ok(())
 }
 

@@ -1,9 +1,9 @@
 //! `dm ping <svc>` — проверить доступность сервиса по его health-config.
 
 use crate::commands::load_project_config;
-use crate::output::{print_system, success_style, println_styled};
-use dm_core::config::HealthCheckKind;
+use crate::output::{print_system, println_styled, success_style};
 use dm_core::DmResult;
+use dm_core::config::HealthCheckKind;
 
 /// Точка входа команды.
 pub async fn run(name: &str) -> DmResult<()> {
@@ -56,7 +56,8 @@ async fn reqwest_status(url: &str) -> bool {
         Some(u) => u,
         None => return false,
     };
-    let mut stream = match tokio::net::TcpStream::connect((parsed.host.as_str(), parsed.port)).await {
+    let mut stream = match tokio::net::TcpStream::connect((parsed.host.as_str(), parsed.port)).await
+    {
         Ok(s) => s,
         Err(_) => return false,
     };

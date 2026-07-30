@@ -6,7 +6,7 @@
 //! - `docs`: открыть документацию `docs/ru/README.md`;
 //! - URL: открыть как есть.
 
-use crate::commands::{load_project_config, OpenArgs};
+use crate::commands::{OpenArgs, load_project_config};
 use crate::output::{print_system, println_styled, success_style, warn_style};
 use dm_core::DmResult;
 
@@ -24,7 +24,8 @@ pub async fn run(args: OpenArgs) -> DmResult<()> {
             // стандартный dev-порт по языку.
             let (config, root) = load_project_config()?;
             let _ = root;
-            let url = config
+
+            config
                 .services
                 .get(svc)
                 .and_then(|s| s.health.as_ref())
@@ -36,15 +37,17 @@ pub async fn run(args: OpenArgs) -> DmResult<()> {
                         .map(|s| default_port_for_language(s.language))
                         .unwrap_or(3000);
                     format!("http://localhost:{port}")
-                });
-            url
+                })
         }
     };
     print_system(&format!("открытие {url}…"));
     if open_in_browser(&url) {
-        println_styled(&format!("  ✓ открыто в браузере по умолчанию"), success_style());
+        println_styled("  ✓ открыто в браузере по умолчанию", success_style());
     } else {
-        println_styled("  ! не удалось открыть браузер; откройте URL вручную.", warn_style());
+        println_styled(
+            "  ! не удалось открыть браузер; откройте URL вручную.",
+            warn_style(),
+        );
         println_styled(&format!("    {url}"), crate::output::dim_style());
     }
     Ok(())

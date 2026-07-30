@@ -83,6 +83,7 @@ impl ManagedProcess {
         // На Unix просим новую process group, чтобы корректно убить всё дерево.
         #[cfg(unix)]
         {
+            #[allow(unused_imports)]
             use std::os::unix::process::CommandExt;
             cmd.process_group(0);
         }
@@ -133,10 +134,7 @@ impl ManagedProcess {
         if let Some(pid) = self.pid.take() {
             // kill_tree::blocking внутри spawn_blocking — кросс-платформенное
             // рекурсивное завершение дерева процессов.
-            let _ = tokio::task::spawn_blocking(move || {
-                kill_tree::blocking::kill_tree(pid)
-            })
-            .await;
+            let _ = tokio::task::spawn_blocking(move || kill_tree::blocking::kill_tree(pid)).await;
         }
         if let Some(mut child) = self.child.take() {
             let _ = child.wait().await;
@@ -161,9 +159,10 @@ impl ManagedProcess {
                 killed_by_signal: false,
             });
         };
-        let status = child.wait().await.map_err(|e| {
-            dm_core::DmError::Process(format!("wait_exit: {e}"))
-        })?;
+        let status = child
+            .wait()
+            .await
+            .map_err(|e| dm_core::DmError::Process(format!("wait_exit: {e}")))?;
         // Останавливаем задачу чтения (стримы уже закрылись на EOF).
         if let Some(task) = self.reader_task.take() {
             let _ = task.await;

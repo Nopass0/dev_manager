@@ -8,8 +8,8 @@
 use crate::commands::{InitArgs, PREFIX_SYS};
 use crate::output::{info_style, println_styled, success_style};
 use crate::templates;
-use dm_core::config::CONFIG_FILENAME;
 use dm_core::DmResult;
+use dm_core::config::CONFIG_FILENAME;
 
 /// Шаблон конфига (dm.yaml), который создаст `dm init` без --template.
 const TEMPLATE: &str = include_str!("../../../../dm.example.yaml");
@@ -20,10 +20,7 @@ pub async fn run(args: InitArgs) -> DmResult<()> {
     if args.list_templates {
         println_styled("Доступные шаблоны проектов:", success_style());
         for t in templates::all_templates() {
-            println_styled(
-                &format!("  {:<18} {}", t.name, t.description),
-                info_style(),
-            );
+            println_styled(&format!("  {:<18} {}", t.name, t.description), info_style());
         }
         return Ok(());
     }
@@ -99,8 +96,8 @@ async fn create_from_template(template_name: &str, name: Option<&str>) -> DmResu
     upsert_dm_yaml(&cwd, &svc_entry)?;
 
     println_styled("Готово! Запуск:", success_style());
-    println_styled(&format!("  dm setup   # установить зависимости"), info_style());
-    println_styled(&format!("  dm start   # запустить с hot-reload"), info_style());
+    println_styled("  dm setup   # установить зависимости", info_style());
+    println_styled("  dm start   # запустить с hot-reload", info_style());
     Ok(())
 }
 
@@ -118,7 +115,10 @@ pub fn build_service_yaml_with_path(
         template.language, template.run_command
     );
     if let Some(tests) = template.test_command {
-        s.push_str(&format!("    tests:\n      cmd: {}\n      on_change: true\n", tests));
+        s.push_str(&format!(
+            "    tests:\n      cmd: {}\n      on_change: true\n",
+            tests
+        ));
     }
     s
 }
@@ -135,10 +135,7 @@ pub fn upsert_dm_yaml(root: &std::path::Path, svc_entry: &str) -> DmResult<()> {
         // Создаём минимальный dm.yaml с этим сервисом.
         let content = format!("version: 1\nproject_name: app\nservices:\n{svc_entry}");
         std::fs::write(&path, content)?;
-        println_styled(
-            &format!("  ✓ создан {CONFIG_FILENAME}"),
-            success_style(),
-        );
+        println_styled(&format!("  ✓ создан {CONFIG_FILENAME}"), success_style());
         return Ok(());
     }
     // Существующий dm.yaml: добавляем сервис в секцию services.
@@ -149,7 +146,10 @@ pub fn upsert_dm_yaml(root: &std::path::Path, svc_entry: &str) -> DmResult<()> {
             let mut result = String::new();
             let after = &content[idx..];
             // найдём конец строки services:
-            let line_end = after.find('\n').map(|p| idx + p + 1).unwrap_or(content.len());
+            let line_end = after
+                .find('\n')
+                .map(|p| idx + p + 1)
+                .unwrap_or(content.len());
             result.push_str(&content[..line_end]);
             result.push_str(svc_entry);
             result.push_str(&content[line_end..]);

@@ -9,7 +9,7 @@
 
 use anstyle::{AnsiColor, Color, Style};
 use comfy_table::{ContentArrangement, Table};
-use dm_runtime::logs::{LogLine, LogLevel, ServiceStatus};
+use dm_runtime::logs::{LogLevel, LogLine, ServiceStatus};
 
 /// Применяет стиль к тексту, возвращая готовую ANSI-строку с reset на конце.
 fn paint(text: &str, style: Style) -> String {
@@ -69,7 +69,11 @@ pub fn print_log_line(line: &LogLine) {
 
 /// Цветной префикс для системных сообщений самого `dm`.
 pub fn print_system(text: &str) {
-    anstream::println!("{} {}", paint(crate::commands::PREFIX_SYS, info_style().bold()), text);
+    anstream::println!(
+        "{} {}",
+        paint(crate::commands::PREFIX_SYS, info_style().bold()),
+        text
+    );
 }
 
 /// Строит таблицу статусов сервисов для команды `dm status`.

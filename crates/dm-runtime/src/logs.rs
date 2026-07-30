@@ -93,20 +93,20 @@ impl ServiceStatus {
 /// `[service]` в общем потоке.
 pub fn service_color(language: ServiceLanguage) -> &'static str {
     match language {
-        ServiceLanguage::Rust => "\x1b[31m",      // красный
-        ServiceLanguage::Go => "\x1b[36m",        // cyan
+        ServiceLanguage::Rust => "\x1b[31m", // красный
+        ServiceLanguage::Go => "\x1b[36m",   // cyan
         ServiceLanguage::C | ServiceLanguage::Cpp => "\x1b[35m", // magenta
-        ServiceLanguage::Csharp => "\x1b[95m",    // bright magenta
+        ServiceLanguage::Csharp => "\x1b[95m", // bright magenta
         ServiceLanguage::JavaScript => "\x1b[33m", // жёлтый
         ServiceLanguage::TypeScript => "\x1b[93m", // bright yellow
-        ServiceLanguage::Bun => "\x1b[92m",       // bright green
-        ServiceLanguage::Nodejs => "\x1b[32m",    // green
-        ServiceLanguage::Lua => "\x1b[34m",       // blue
-        ServiceLanguage::Python => "\x1b[94m",    // bright blue
-        ServiceLanguage::Vite => "\x1b[95m",      // bright magenta
-        ServiceLanguage::Nextjs => "\x1b[97m",    // bright white
-        ServiceLanguage::Remix => "\x1b[96m",     // bright cyan
-        ServiceLanguage::Other => "\x1b[37m",     // white
+        ServiceLanguage::Bun => "\x1b[92m",  // bright green
+        ServiceLanguage::Nodejs => "\x1b[32m", // green
+        ServiceLanguage::Lua => "\x1b[34m",  // blue
+        ServiceLanguage::Python => "\x1b[94m", // bright blue
+        ServiceLanguage::Vite => "\x1b[95m", // bright magenta
+        ServiceLanguage::Nextjs => "\x1b[97m", // bright white
+        ServiceLanguage::Remix => "\x1b[96m", // bright cyan
+        ServiceLanguage::Other => "\x1b[37m", // white
     }
 }
 

@@ -5,8 +5,8 @@
 //! - числом с префиксом `:` (порт, например `:3001`);
 //! - именем процесса (`node`, `vite`) для группового завершения.
 
-use crate::commands::ports::{kill_pid, pid_of_port};
 use crate::commands::KillArgs;
+use crate::commands::ports::{kill_pid, pid_of_port};
 use crate::output::{dim_style, print_system, println_styled, success_style, warn_style};
 use dm_core::DmResult;
 use std::process::Command;
@@ -21,10 +21,10 @@ pub async fn run(args: KillArgs) -> DmResult<()> {
     }
 
     // 1. Порт: :3001
-    if let Some(port_str) = target.strip_prefix(':') {
-        if let Ok(port) = port_str.parse::<u16>() {
-            return kill_by_port(port).await;
-        }
+    if let Some(port_str) = target.strip_prefix(':')
+        && let Ok(port) = port_str.parse::<u16>()
+    {
+        return kill_by_port(port).await;
     }
 
     // 2. PID (только цифры)
@@ -32,7 +32,10 @@ pub async fn run(args: KillArgs) -> DmResult<()> {
         if kill_pid(pid) {
             println_styled(&format!("  ✓ процесс {pid} завершён"), success_style());
         } else {
-            println_styled(&format!("  ! не удалось завершить процесс {pid}"), warn_style());
+            println_styled(
+                &format!("  ! не удалось завершить процесс {pid}"),
+                warn_style(),
+            );
         }
         return Ok(());
     }
@@ -46,10 +49,16 @@ async fn kill_by_port(port: u16) -> DmResult<()> {
     print_system(&format!("поиск процесса на порту {port}…"));
     match pid_of_port(port) {
         Some(p) if kill_pid(p) => {
-            println_styled(&format!("  ✓ процесс {p} (порт {port}) завершён"), success_style());
+            println_styled(
+                &format!("  ✓ процесс {p} (порт {port}) завершён"),
+                success_style(),
+            );
         }
         Some(p) => {
-            println_styled(&format!("  ! не удалось завершить процесс {p}"), warn_style());
+            println_styled(
+                &format!("  ! не удалось завершить процесс {p}"),
+                warn_style(),
+            );
         }
         None => {
             println_styled(&format!("  • порт {port} не занят"), dim_style());

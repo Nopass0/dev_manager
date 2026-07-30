@@ -97,7 +97,10 @@ impl DependencyGraph {
             }
         }
 
-        Self { files, reverse_edges }
+        Self {
+            files,
+            reverse_edges,
+        }
     }
 
     /// Возвращает множество файлов, затронутых изменением `changed` (транзитивно).
@@ -105,10 +108,7 @@ impl DependencyGraph {
     /// Это сам `changed` + все, кто его импортирует, + все, кто импортирует их, и т.д.
     pub fn affected_files(&self, changed: &[PathBuf]) -> HashSet<PathBuf> {
         let mut out = HashSet::new();
-        let mut queue: Vec<PathBuf> = changed
-            .iter()
-            .map(|p| normalize(p))
-            .collect();
+        let mut queue: Vec<PathBuf> = changed.iter().map(|p| normalize(p)).collect();
         let mut visited: HashSet<PathBuf> = HashSet::new();
         while let Some(p) = queue.pop() {
             if !visited.insert(p.clone()) {
@@ -128,7 +128,11 @@ impl DependencyGraph {
     ///
     /// Сервис считается затронутым, если хотя бы один affected-файл лежит внутри
     /// его каталога.
-    pub fn affected_services(&self, changed: &[PathBuf], service_dirs: &[(&str, &Path)]) -> Vec<String> {
+    pub fn affected_services(
+        &self,
+        changed: &[PathBuf],
+        service_dirs: &[(&str, &Path)],
+    ) -> Vec<String> {
         let affected = self.affected_files(changed);
         let mut result: IndexSet<String> = IndexSet::new();
         for (name, dir) in service_dirs {
@@ -193,8 +197,7 @@ fn extract_imports(ext: &str, source: &str, file: &Path, _root: &Path) -> Vec<Pa
         "js" | "jsx" | "mjs" | "cjs" => {
             parser.set_language(&tree_sitter_javascript::LANGUAGE.into())
         }
-        "ts" | "tsx" => parser
-            .set_language(&tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into()),
+        "ts" | "tsx" => parser.set_language(&tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into()),
         "go" => parser.set_language(&tree_sitter_go::LANGUAGE.into()),
         _ => return Vec::new(),
     };
@@ -231,7 +234,7 @@ fn traverse<'a>(
     // Дополнительная проверка: для некоторых языков строковый аргумент импорта —
     // это text узла; собираем его здесь через languages::node_text.
     let _ = (source, &languages::node_text);
-    cursor.reset(node.clone());
+    cursor.reset(*node);
     if cursor.goto_first_child() {
         loop {
             let n = cursor.node();
@@ -250,9 +253,9 @@ fn traverse<'a>(
 fn import_spec_from_node(node: &Node, source: &str, ext: &str) -> Option<String> {
     let text = languages::node_text(node, source);
     match ext {
-        "rs" => rust_use_target(&text),
+        "rs" => rust_use_target(text),
         "js" | "jsx" | "mjs" | "cjs" | "ts" | "tsx" => js_import_source(node, source),
-        "go" => go_import_target(&text),
+        "go" => go_import_target(text),
         _ => None,
     }
 }
@@ -266,7 +269,10 @@ fn rust_use_target(text: &str) -> Option<String> {
     let head = head.split(';').next()?.trim();
     let first_segment = head.split("::").next()?.trim();
     // Пропускаем crate/self/super/абсолютные — интересны только локальные.
-    if matches!(first_segment, "crate" | "self" | "super" | "std" | "core" | "alloc") {
+    if matches!(
+        first_segment,
+        "crate" | "self" | "super" | "std" | "core" | "alloc"
+    ) {
         return None;
     }
     Some(format!("{first_segment}.rs"))
@@ -346,7 +352,9 @@ fn resolve_spec(spec: &str, base_dir: &Path) -> Option<PathBuf> {
 fn fuzzy_match(target: &Path, index: &HashMap<PathBuf, usize>) -> Option<usize> {
     let target_stem = target.file_stem()?.to_str()?.to_lowercase();
     for (p, &i) in index {
-        if p.file_stem().and_then(|s| s.to_str()).map(|s| s.to_lowercase())
+        if p.file_stem()
+            .and_then(|s| s.to_str())
+            .map(|s| s.to_lowercase())
             == Some(target_stem.clone())
         {
             return Some(i);
@@ -359,8 +367,18 @@ fn fuzzy_match(target: &Path, index: &HashMap<PathBuf, usize>) -> Option<usize> 
 fn is_ignored_dir(name: &str) -> bool {
     matches!(
         name,
-        ".git" | "target" | "node_modules" | "dist" | "build" | ".next"
-            | "out" | "__pycache__" | ".venv" | "venv" | "vendor" | ".cache"
+        ".git"
+            | "target"
+            | "node_modules"
+            | "dist"
+            | "build"
+            | ".next"
+            | "out"
+            | "__pycache__"
+            | ".venv"
+            | "venv"
+            | "vendor"
+            | ".cache"
     )
 }
 
@@ -407,7 +425,10 @@ mod tests {
         let mut reverse: HashMap<PathBuf, Vec<usize>> = HashMap::new();
         reverse.insert(PathBuf::from("/p/b.rs"), vec![0]); // a импортирует b
         reverse.insert(PathBuf::from("/p/c.rs"), vec![1]); // b импортирует c
-        let g = DependencyGraph { files, reverse_edges: reverse };
+        let g = DependencyGraph {
+            files,
+            reverse_edges: reverse,
+        };
         let affected = g.affected_files(&[PathBuf::from("/p/c.rs")]);
         assert!(affected.contains(Path::new("/p/c.rs")));
         assert!(affected.contains(Path::new("/p/b.rs")));

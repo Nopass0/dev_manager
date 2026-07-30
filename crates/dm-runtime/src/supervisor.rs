@@ -11,32 +11,22 @@ use crate::logs::{LogLine, ServiceStatus};
 use crate::notify::{NotifyConfig, NotifyEvent};
 use crate::process::{ManagedProcess, ProcessExit};
 use crate::spawn_strategy::resolve_run_command;
+use dm_core::DmResult;
 use dm_core::config::Config;
 use dm_core::project::{Project, Service};
-use dm_core::DmResult;
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::{mpsc, Mutex, RwLock};
+use tokio::sync::{Mutex, RwLock, mpsc};
 use tokio::task::JoinHandle;
 
 /// Опции запуска supervisor'а.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SupervisorOptions {
     /// Отключить file-watching (флаг `--no-watch`).
     pub no_watch: bool,
     /// Не перезапускать упавшие процессы.
     pub no_restart: bool,
-}
-
-impl Default for SupervisorOptions {
-    fn default() -> Self {
-        Self {
-            no_watch: false,
-            no_restart: false,
-        }
-    }
 }
 
 /// Рантайм-состояние одного сервиса: статус и текущий процесс (если жив).
@@ -86,7 +76,11 @@ impl Supervisor {
     ///
     /// `log_tx` — канал, в который будут отправляться все лог-линии; потребитель
     /// (обычно консольный принтер в `dm-cli`) читает его в отдельной задаче.
-    pub fn new(project: Project, options: SupervisorOptions, log_tx: mpsc::UnboundedSender<LogLine>) -> Self {
+    pub fn new(
+        project: Project,
+        options: SupervisorOptions,
+        log_tx: mpsc::UnboundedSender<LogLine>,
+    ) -> Self {
         Self::with_notify(project, options, log_tx, NotifyConfig::default())
     }
 
@@ -160,10 +154,10 @@ impl Supervisor {
             self.handles.lock().await.push(handle);
 
             // Уважаем delay_ms перед запуском следующего (очередь/задержки).
-            if let Some(delay) = delays.get(&svc_name) {
-                if *delay > 0 {
-                    tokio::time::sleep(Duration::from_millis(*delay)).await;
-                }
+            if let Some(delay) = delays.get(&svc_name)
+                && *delay > 0
+            {
+                tokio::time::sleep(Duration::from_millis(*delay)).await;
             }
         }
         Ok(())
@@ -357,38 +351,37 @@ impl Supervisor {
                         .collect()
                 };
                 for (name, pid, limit_mb, action) in snapshot {
-                    match crate::monitor::check_memory(pid, limit_mb) {
-                        crate::monitor::MemoryCheck::Exceeded { rss_mb, limit_mb } => {
-                            let _ = log_tx.send(LogLine::new(
-                                name.clone(),
-                                crate::logs::LogLevel::Error,
-                                format!(
-                                    "превышен лимит памяти: {rss_mb} МБ > {limit_mb} МБ (действие: {action:?})"
-                                ),
-                            ));
-                            // Уведомление всегда.
-                            let n = notify.clone();
-                            let nm = name.clone();
-                            let detail = format!("RSS {rss_mb} МБ > лимит {limit_mb} МБ");
-                            tokio::spawn(async move {
-                                crate::notify::send(&n, NotifyEvent::Crash, &nm, &detail).await;
-                            });
-                            // Kill — если настроено.
-                            if matches!(action, dm_core::config::ResourceAction::Kill) {
-                                let mut st = states.lock().await;
-                                if let Some(state) = st.get_mut(&name) {
-                                    state.restart_requested = true; // цикл убьёт и поднимет
-                                    state.pid = None;
-                                }
-                                drop(st);
-                                // Рекурсивное убийство дерева через kill_tree.
-                                let _ = tokio::task::spawn_blocking(move || {
-                                    let _ = kill_tree::blocking::kill_tree(pid);
-                                })
-                                .await;
+                    if let crate::monitor::MemoryCheck::Exceeded { rss_mb, limit_mb } =
+                        crate::monitor::check_memory(pid, limit_mb)
+                    {
+                        let _ = log_tx.send(LogLine::new(
+                            name.clone(),
+                            crate::logs::LogLevel::Error,
+                            format!(
+                                "превышен лимит памяти: {rss_mb} МБ > {limit_mb} МБ (действие: {action:?})"
+                            ),
+                        ));
+                        // Уведомление всегда.
+                        let n = notify.clone();
+                        let nm = name.clone();
+                        let detail = format!("RSS {rss_mb} МБ > лимит {limit_mb} МБ");
+                        tokio::spawn(async move {
+                            crate::notify::send(&n, NotifyEvent::Crash, &nm, &detail).await;
+                        });
+                        // Kill — если настроено.
+                        if matches!(action, dm_core::config::ResourceAction::Kill) {
+                            let mut st = states.lock().await;
+                            if let Some(state) = st.get_mut(&name) {
+                                state.restart_requested = true; // цикл убьёт и поднимет
+                                state.pid = None;
                             }
+                            drop(st);
+                            // Рекурсивное убийство дерева через kill_tree.
+                            let _ = tokio::task::spawn_blocking(move || {
+                                let _ = kill_tree::blocking::kill_tree(pid);
+                            })
+                            .await;
                         }
-                        _ => {}
                     }
                 }
             }
@@ -443,10 +436,10 @@ async fn run_service_loop(
         // Если сервис остановлен пользователем — выходим.
         {
             let st = states.lock().await;
-            if let Some(state) = st.get(&svc.name) {
-                if state.stopped_by_user {
-                    break;
-                }
+            if let Some(state) = st.get(&svc.name)
+                && state.stopped_by_user
+            {
+                break;
             }
         }
 
@@ -512,38 +505,37 @@ async fn run_service_loop(
 
         // --- Ожидание реального выхода процесса ---
         // tokio::select! даёт возможность отреагировать на shutdown/restart-флаг
-        // не дожидаясь естественного выхода.
-        let exit = loop {
-            tokio::select! {
-                _ = shutdown_signal(&shutdown) => {
-                    // Глобальный shutdown — убиваем и выходим.
-                    let _ = proc.kill().await;
-                    return;
-                }
-                _ = restart_requested(&states, &svc.name) => {
-                    // Watcher или restart() попросили перезапуск.
-                    let _ = log_tx.send(LogLine::new(
-                        svc.name.clone(),
-                        crate::logs::LogLevel::System,
-                        "перезапуск...".to_string(),
-                    ));
-                    let _ = proc.kill().await;
-                    // Сбрасываем флаг запроса рестарта и продолжаем внешний цикл.
-                    clear_restart_flag(&states, &svc.name).await;
-                    break None;
-                }
-                exit_res = proc.wait_exit() => {
-                    // Процесс завершился сам — получили код.
-                    match exit_res {
-                        Ok(e) => break Some(e),
-                        Err(e) => {
-                            let _ = log_tx.send(LogLine::new(
-                                svc.name.clone(),
-                                crate::logs::LogLevel::Error,
-                                format!("ошибка ожидания: {e}"),
-                            ));
-                            break Some(ProcessExit { code: None, killed_by_signal: false });
-                        }
+        // не дожидаясь естественного выхода. Каждая ветвь завершает ожидание,
+        // поэтому select! используется без обёртки в loop.
+        let exit = tokio::select! {
+            _ = shutdown_signal(&shutdown) => {
+                // Глобальный shutdown — убиваем и выходим.
+                let _ = proc.kill().await;
+                return;
+            }
+            _ = restart_requested(&states, &svc.name) => {
+                // Watcher или restart() попросили перезапуск.
+                let _ = log_tx.send(LogLine::new(
+                    svc.name.clone(),
+                    crate::logs::LogLevel::System,
+                    "перезапуск...".to_string(),
+                ));
+                let _ = proc.kill().await;
+                // Сбрасываем флаг запроса рестарта и продолжаем внешний цикл.
+                clear_restart_flag(&states, &svc.name).await;
+                None
+            }
+            exit_res = proc.wait_exit() => {
+                // Процесс завершился сам — получили код.
+                match exit_res {
+                    Ok(e) => Some(e),
+                    Err(e) => {
+                        let _ = log_tx.send(LogLine::new(
+                            svc.name.clone(),
+                            crate::logs::LogLevel::Error,
+                            format!("ошибка ожидания: {e}"),
+                        ));
+                        Some(ProcessExit { code: None, killed_by_signal: false })
                     }
                 }
             }
@@ -576,7 +568,10 @@ async fn run_service_loop(
                 continue;
             }
             Some(e) => {
-                let code = e.code.map(|c| c.to_string()).unwrap_or_else(|| "сигнал".into());
+                let code = e
+                    .code
+                    .map(|c| c.to_string())
+                    .unwrap_or_else(|| "сигнал".into());
                 let _ = log_tx.send(LogLine::new(
                     svc.name.clone(),
                     crate::logs::LogLevel::Error,
@@ -641,10 +636,7 @@ async fn register_crash(
 }
 
 /// Сбрасывает счётчик крэшей, если процесс проработал достаточно долго (>10с).
-async fn maybe_reset_crash_counter(
-    states: &Arc<Mutex<HashMap<String, ServiceState>>>,
-    name: &str,
-) {
+async fn maybe_reset_crash_counter(states: &Arc<Mutex<HashMap<String, ServiceState>>>, name: &str) {
     const UPTIME_THRESHOLD_MS: u64 = 10_000;
     let now = now_ms();
     let mut st = states.lock().await;
@@ -681,10 +673,7 @@ async fn shutdown_signal(shutdown: &Arc<RwLock<bool>>) {
 }
 
 /// Future, завершающаяся когда сервису请求ил рестарт (флаг в состоянии).
-async fn restart_requested(
-    states: &Arc<Mutex<HashMap<String, ServiceState>>>,
-    name: &str,
-) {
+async fn restart_requested(states: &Arc<Mutex<HashMap<String, ServiceState>>>, name: &str) {
     loop {
         let requested = {
             let st = states.lock().await;
@@ -698,10 +687,7 @@ async fn restart_requested(
 }
 
 /// Сбрасывает флаг запроса рестарта.
-async fn clear_restart_flag(
-    states: &Arc<Mutex<HashMap<String, ServiceState>>>,
-    name: &str,
-) {
+async fn clear_restart_flag(states: &Arc<Mutex<HashMap<String, ServiceState>>>, name: &str) {
     let mut st = states.lock().await;
     if let Some(state) = st.get_mut(name) {
         state.restart_requested = false;
@@ -720,7 +706,7 @@ fn now_ms() -> u64 {
 ///
 /// Разрешает все относительные пути и команды запуска. Это точка моста между
 /// конфигом (serde-структуры) и runtime-моделью.
-pub fn project_from_config(cfg: &Config, root: &PathBuf) -> DmResult<Project> {
+pub fn project_from_config(cfg: &Config, root: &std::path::Path) -> DmResult<Project> {
     use dm_core::paths;
     use std::path::Path;
 
@@ -748,7 +734,7 @@ pub fn project_from_config(cfg: &Config, root: &PathBuf) -> DmResult<Project> {
     }
     Ok(Project {
         name: cfg.project_name.clone(),
-        root: root.clone(),
+        root: root.to_path_buf(),
         services,
     })
 }
@@ -756,8 +742,7 @@ pub fn project_from_config(cfg: &Config, root: &PathBuf) -> DmResult<Project> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dm_core::config::ServiceConfig;
-    use dm_core::project::ServiceLanguage;
+    use std::path::PathBuf;
 
     fn minimal_config() -> Config {
         // Разбираем конфиг из YAML — так не нужно напрямую зависеть от indexmap.

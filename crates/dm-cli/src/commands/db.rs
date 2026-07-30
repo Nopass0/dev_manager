@@ -6,8 +6,8 @@
 //! - `reset` → drop + migrate + seed (если поддерживается);
 //! - `shell` → интерактивный клиент (`psql`, `redis-cli`, `sqlite3`…).
 
-use crate::commands::{load_project_config, DbAction, DbArgs};
-use crate::output::{print_system, success_style, warn_style, println_styled};
+use crate::commands::{DbAction, DbArgs, load_project_config};
+use crate::output::{print_system, println_styled, success_style, warn_style};
 use dm_core::DmResult;
 use std::process::Command;
 
@@ -36,7 +36,9 @@ fn pick_connection(
     }
     match name {
         Some(n) => config.database.connections.get(n).cloned().ok_or_else(|| {
-            dm_core::DmError::invalid_config(format!("подключение '{n}' не найдено в database.connections"))
+            dm_core::DmError::invalid_config(format!(
+                "подключение '{n}' не найдено в database.connections"
+            ))
         }),
         None => {
             // Приоритет: default → api → первое.
@@ -47,15 +49,16 @@ fn pick_connection(
                 .or_else(|| config.database.connections.get("api"))
                 .or_else(|| config.database.connections.values().next())
                 .cloned()
-                .ok_or_else(|| {
-                    dm_core::DmError::invalid_config("нет ни одного подключения к БД")
-                })
+                .ok_or_else(|| dm_core::DmError::invalid_config("нет ни одного подключения к БД"))
         }
     }
 }
 
 /// Применяет миграции.
-async fn run_migrate(conn: &dm_core::config::DatabaseConnection, root: &std::path::Path) -> DmResult<()> {
+async fn run_migrate(
+    conn: &dm_core::config::DatabaseConnection,
+    root: &std::path::Path,
+) -> DmResult<()> {
     let cmd = conn
         .migrate_cmd
         .clone()
@@ -65,11 +68,17 @@ async fn run_migrate(conn: &dm_core::config::DatabaseConnection, root: &std::pat
 }
 
 /// Накатывает seed-данные.
-async fn run_seed(conn: &dm_core::config::DatabaseConnection, root: &std::path::Path) -> DmResult<()> {
+async fn run_seed(
+    conn: &dm_core::config::DatabaseConnection,
+    root: &std::path::Path,
+) -> DmResult<()> {
     let cmd = match &conn.seed_cmd {
         Some(c) => c.clone(),
         None => {
-            println_styled("команда seed не настроена (database.<conn>.seed_cmd)", warn_style());
+            println_styled(
+                "команда seed не настроена (database.<conn>.seed_cmd)",
+                warn_style(),
+            );
             return Ok(());
         }
     };
@@ -78,7 +87,10 @@ async fn run_seed(conn: &dm_core::config::DatabaseConnection, root: &std::path::
 }
 
 /// Reset: drop + migrate + seed.
-async fn run_reset(conn: &dm_core::config::DatabaseConnection, root: &std::path::Path) -> DmResult<()> {
+async fn run_reset(
+    conn: &dm_core::config::DatabaseConnection,
+    root: &std::path::Path,
+) -> DmResult<()> {
     print_system("reset: пересоздание схемы (drop → migrate → seed)");
     // Простой подход для postgres: dropdb + createdb, потом migrate.
     let reset_cmd = match conn.kind.as_str() {
@@ -100,7 +112,10 @@ async fn run_reset(conn: &dm_core::config::DatabaseConnection, root: &std::path:
 }
 
 /// Открывает интерактивный клиент БД.
-async fn run_shell(conn: &dm_core::config::DatabaseConnection, _root: &std::path::Path) -> DmResult<()> {
+async fn run_shell(
+    conn: &dm_core::config::DatabaseConnection,
+    _root: &std::path::Path,
+) -> DmResult<()> {
     let (program, args) = shell_client(conn)?;
     print_system(&format!("db shell: {program} {}", args.join(" ")));
     let status = Command::new(&program)
@@ -128,7 +143,7 @@ fn shell_client(conn: &dm_core::config::DatabaseConnection) -> DmResult<(String,
         other => {
             return Err(dm_core::DmError::invalid_config(format!(
                 "неизвестный тип БД '{other}' для shell"
-            )))
+            )));
         }
     })
 }
@@ -137,15 +152,24 @@ fn shell_client(conn: &dm_core::config::DatabaseConnection) -> DmResult<(String,
 fn default_migrate_cmd(kind: &str, conn: &dm_core::config::DatabaseConnection) -> String {
     match kind {
         "postgres" | "postgresql" => {
-            let dir = conn.migrations_dir.clone().unwrap_or_else(|| "migrations".into());
+            let dir = conn
+                .migrations_dir
+                .clone()
+                .unwrap_or_else(|| "migrations".into());
             format!(
                 "psql '{}' -f {dir}/up.sql || for f in {dir}/*.up.sql; do psql '{}' -f \"$f\"; done",
                 conn.url, conn.url
             )
         }
         "sqlite" => {
-            let dir = conn.migrations_dir.clone().unwrap_or_else(|| "migrations".into());
-            format!("for f in {dir}/*.sql; do sqlite3 '{}' < \"$f\"; done", conn.url)
+            let dir = conn
+                .migrations_dir
+                .clone()
+                .unwrap_or_else(|| "migrations".into());
+            format!(
+                "for f in {dir}/*.sql; do sqlite3 '{}' < \"$f\"; done",
+                conn.url
+            )
         }
         _ => format!("echo 'настройте migrate_cmd для типа {kind}'"),
     }

@@ -7,7 +7,7 @@
 use crate::commands::load_project_config;
 use crate::output::{dim_style, print_system, println_styled};
 use comfy_table::{ContentArrangement, Table};
-use dm_analysis::search::{search, SearchOptions};
+use dm_analysis::search::{SearchOptions, search};
 use dm_core::DmResult;
 
 /// Маркеры, которые ищем.
@@ -32,7 +32,10 @@ pub async fn run() -> DmResult<()> {
     }
 
     if rows.is_empty() {
-        println_styled("TODO/FIXME маркеры не найдены ✨", crate::output::success_style());
+        println_styled(
+            "TODO/FIXME маркеры не найдены ✨",
+            crate::output::success_style(),
+        );
         return Ok(());
     }
 
@@ -60,7 +63,10 @@ pub async fn run() -> DmResult<()> {
         *by_kind.entry(k.as_str()).or_default() += 1;
     }
     let summary: Vec<String> = by_kind.iter().map(|(k, n)| format!("{k}: {n}")).collect();
-    println_styled(&format!("всего {}: {}", rows.len(), summary.join(", ")), dim_style());
+    println_styled(
+        &format!("всего {}: {}", rows.len(), summary.join(", ")),
+        dim_style(),
+    );
     Ok(())
 }
 
@@ -71,7 +77,10 @@ fn extract_marker_text(line: &str, marker: &str) -> String {
         Some(i) => i + marker.len(),
         None => return line.trim().to_string(),
     };
-    line[idx..].trim_start_matches([':', ' ', '\t']).trim().to_string()
+    line[idx..]
+        .trim_start_matches([':', ' ', '\t'])
+        .trim()
+        .to_string()
 }
 
 /// Сокращает путь файла относительно корня проекта.

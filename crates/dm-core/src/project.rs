@@ -112,9 +112,9 @@ impl ServiceLanguage {
             ServiceLanguage::Lua => &["lua"],
             ServiceLanguage::Python => &["py"],
             // Фронтенд-фреймворки в основном пишут на TS/JS.
-            ServiceLanguage::Vite
-            | ServiceLanguage::Nextjs
-            | ServiceLanguage::Remix => &["ts", "tsx", "js", "jsx"],
+            ServiceLanguage::Vite | ServiceLanguage::Nextjs | ServiceLanguage::Remix => {
+                &["ts", "tsx", "js", "jsx"]
+            }
             ServiceLanguage::Other => &[],
         }
     }
@@ -176,7 +176,10 @@ mod tests {
 
     #[test]
     fn default_run_commands() {
-        assert_eq!(ServiceLanguage::Rust.default_run_command(), Some("cargo run"));
+        assert_eq!(
+            ServiceLanguage::Rust.default_run_command(),
+            Some("cargo run")
+        );
         assert_eq!(ServiceLanguage::Other.default_run_command(), None);
     }
 

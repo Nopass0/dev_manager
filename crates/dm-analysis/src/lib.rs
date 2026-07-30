@@ -25,9 +25,9 @@ pub mod search;
 pub mod secrets;
 pub mod symbols;
 
-pub use diff::{changed_symbols, ChangedCodeSymbol};
+pub use diff::{ChangedCodeSymbol, changed_symbols};
 pub use graph::{DependencyGraph, FileNode, PathNode};
-pub use parser::{parse_file, parse_file_str, LanguageParser, ParsedFile, parser_for_extension};
+pub use parser::{LanguageParser, ParsedFile, parse_file, parse_file_str, parser_for_extension};
 pub use symbols::{Symbol, SymbolKind};
 
 /// Лексическая нормализация пути (схлопывание `..` и `.` без обращения к ФС).

@@ -8,12 +8,11 @@ pub mod loader;
 pub mod schema;
 
 pub use loader::{
-    deep_merge, discover_config, env_overlay_filename, load_config, load_resolved_config,
-    CONFIG_FILENAME, CONFIG_FILENAME_ALT, DM_ENV_VAR,
+    CONFIG_FILENAME, CONFIG_FILENAME_ALT, DM_ENV_VAR, deep_merge, discover_config,
+    env_overlay_filename, load_config, load_resolved_config,
 };
 pub use schema::{
-    Config, DatabaseConfig, DatabaseConnection, DeployTrigger, DeployTarget, DockerConfig,
-    HealthCheckConfig, HealthCheckKind, LogsConfig, LinterConfig, ProfileConfig,
-    ResourceAction, ResourceLimits, RestartBehavior, RestartPolicy, RuntimeConfig,
-    ServiceConfig, TestsConfig,
+    Config, DatabaseConfig, DatabaseConnection, DeployTarget, DeployTrigger, DockerConfig,
+    HealthCheckConfig, HealthCheckKind, LinterConfig, LogsConfig, ProfileConfig, ResourceAction,
+    ResourceLimits, RestartBehavior, RestartPolicy, RuntimeConfig, ServiceConfig, TestsConfig,
 };

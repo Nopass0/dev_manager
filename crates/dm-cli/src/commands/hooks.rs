@@ -4,8 +4,8 @@
 //! - `pre-commit` → `dm format && dm lint` (быстрые проверки);
 //! - `pre-push` → `dm test` (полные тесты).
 
-use crate::commands::{load_project_config, HooksArgs};
-use crate::output::{print_system, success_style, warn_style, println_styled};
+use crate::commands::{HooksArgs, load_project_config};
+use crate::output::{print_system, println_styled, success_style, warn_style};
 use dm_core::DmResult;
 use std::path::PathBuf;
 
@@ -79,7 +79,10 @@ fn install_hook(hooks_dir: &std::path::Path, name: &str) -> DmResult<()> {
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).ok();
     }
-    println_styled(&format!("  ✓ хук {filename} установлен в {}", path.display()), success_style());
+    println_styled(
+        &format!("  ✓ хук {filename} установлен в {}", path.display()),
+        success_style(),
+    );
     Ok(())
 }
 

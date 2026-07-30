@@ -102,9 +102,6 @@ mod tests {
     fn resolves_windows_drive() {
         let base = Path::new("C:\\proj");
         let rel = Path::new("services\\api");
-        assert_eq!(
-            resolve(base, rel),
-            PathBuf::from("C:\\proj\\services\\api")
-        );
+        assert_eq!(resolve(base, rel), PathBuf::from("C:\\proj\\services\\api"));
     }
 }

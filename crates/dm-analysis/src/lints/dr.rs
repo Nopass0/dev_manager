@@ -20,8 +20,7 @@ pub fn find_dr_violations(symbols: &[Symbol]) -> Vec<LintFinding> {
 
     let mut out = Vec::new();
     for (name, group) in groups {
-        let files: std::collections::HashSet<_> =
-            group.iter().map(|s| s.file.clone()).collect();
+        let files: std::collections::HashSet<_> = group.iter().map(|s| s.file.clone()).collect();
         if files.len() > 1 {
             // Берём первое вхождение как «канон», остальные — подозрительные дубликаты.
             for s in group.iter().skip(1) {

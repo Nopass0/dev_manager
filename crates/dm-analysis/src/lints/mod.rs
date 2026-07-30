@@ -3,8 +3,8 @@
 //! Каждый линтер возвращает список [`LintFinding`] — единый формат нарушений.
 //! `dm lint` агрегирует их и выводит в виде таблицы.
 
-pub mod duplicates;
 pub mod dr;
+pub mod duplicates;
 pub mod kiss;
 pub mod unused;
 
@@ -54,10 +54,7 @@ impl LintCategory {
 /// Запускает все включённые линтеры над списком символов проекта.
 ///
 /// `which` — флаги включённых категорий (DRY/KISS/unused/duplicates).
-pub fn run_all(
-    symbols: &[Symbol],
-    which: LintSet,
-) -> Vec<LintFinding> {
+pub fn run_all(symbols: &[Symbol], which: LintSet) -> Vec<LintFinding> {
     let mut out = Vec::new();
     if which.duplicates {
         out.extend(duplicates::find_duplicates(symbols));

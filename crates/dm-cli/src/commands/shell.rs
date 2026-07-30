@@ -30,17 +30,17 @@ pub async fn run(name: &str) -> DmResult<()> {
     // Подставляем переменные из .env сервиса.
     if let Ok(env_text) = std::fs::read_to_string(cwd.join(".env")) {
         for line in env_text.lines() {
-            if let Some((k, v)) = line.split_once('=') {
-                if !k.starts_with('#') {
-                    cmd.env(k.trim(), v.trim());
-                }
+            if let Some((k, v)) = line.split_once('=')
+                && !k.starts_with('#')
+            {
+                cmd.env(k.trim(), v.trim());
             }
         }
     }
 
-    let status = cmd.status().map_err(|e| {
-        dm_core::DmError::Process(format!("не удалось запустить shell: {e}"))
-    })?;
+    let status = cmd
+        .status()
+        .map_err(|e| dm_core::DmError::Process(format!("не удалось запустить shell: {e}")))?;
     if !status.success() {
         return Err(dm_core::DmError::Process(format!(
             "shell завершился с кодом {}",

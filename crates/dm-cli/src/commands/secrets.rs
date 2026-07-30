@@ -1,7 +1,7 @@
 //! `dm secrets` — поиск потенциально утёкших секретов в проекте.
 
 use crate::commands::load_project_config;
-use crate::output::{error_style, print_system, success_style, warn_style, println_styled};
+use crate::output::{error_style, print_system, println_styled, success_style, warn_style};
 use comfy_table::{ContentArrangement, Table};
 use dm_analysis::secrets::scan;
 use dm_core::DmResult;
@@ -32,7 +32,10 @@ pub async fn run() -> DmResult<()> {
     }
     println!("{table}");
     println_styled(
-        &format!("всего предупреждений: {} — проверьте вручную", findings.len()),
+        &format!(
+            "всего предупреждений: {} — проверьте вручную",
+            findings.len()
+        ),
         warn_style(),
     );
     let _ = error_style;
@@ -46,6 +49,13 @@ fn mask_secret(text: &str) -> String {
         return trimmed.to_string();
     }
     let head: String = trimmed.chars().take(12).collect();
-    let tail: String = trimmed.chars().rev().take(4).collect::<Vec<_>>().into_iter().rev().collect();
+    let tail: String = trimmed
+        .chars()
+        .rev()
+        .take(4)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
     format!("{head}…{tail}")
 }

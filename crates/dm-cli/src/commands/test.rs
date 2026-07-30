@@ -3,10 +3,10 @@
 //! Использует `tests.cmd` из конфига сервиса. Если команда не задана — пробует
 //! дефолт для языка (cargo test / npm test / go test).
 
-use crate::commands::{load_project_config, TargetArgs};
-use crate::output::{print_system, success_style, warn_style, println_styled};
-use dm_core::project::ServiceLanguage;
+use crate::commands::{TargetArgs, load_project_config};
+use crate::output::{print_system, println_styled, success_style, warn_style};
 use dm_core::DmResult;
+use dm_core::project::ServiceLanguage;
 use tokio::process::Command;
 
 /// Точка входа команды.
@@ -21,7 +21,11 @@ pub async fn run(args: TargetArgs) -> DmResult<()> {
                 .ok_or_else(|| dm_core::DmError::ServiceNotFound(n.clone()))?;
             vec![(n.clone(), svc.clone())]
         }
-        None => config.services.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+        None => config
+            .services
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect(),
     };
 
     for (name, svc) in targets {

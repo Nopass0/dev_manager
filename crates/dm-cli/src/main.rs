@@ -4,7 +4,7 @@
 //! логирования, парсинг и корректный код выхода.
 
 use clap::Parser;
-use dm_cli::{run, Cli};
+use dm_cli::{Cli, run};
 
 #[tokio::main]
 async fn main() {

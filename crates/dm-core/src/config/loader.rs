@@ -97,9 +97,8 @@ pub fn load_resolved_config(path: &Path, env: Option<&str>) -> DmResult<Config> 
 
     // 5. Фильтр only_on: убираем сервисы, не активные в текущем окружении.
     if !env_name.is_empty() {
-        cfg.services.retain(|_, svc| {
-            svc.only_on.is_empty() || svc.only_on.iter().any(|e| e == &env_name)
-        });
+        cfg.services
+            .retain(|_, svc| svc.only_on.is_empty() || svc.only_on.iter().any(|e| e == &env_name));
     }
 
     cfg.validate()?;
@@ -115,7 +114,7 @@ fn load_with_extends(path: &Path) -> DmResult<Config> {
 /// Рекурсивный помощник [`load_with_extends`]; `visited` — защита от циклов.
 fn load_with_extends_inner(path: &Path, visited: &mut Vec<PathBuf>) -> DmResult<Config> {
     let canonical = paths::simplify(path);
-    if visited.iter().any(|p| *p == canonical) {
+    if visited.contains(&canonical) {
         return Err(DmError::invalid_config(format!(
             "обнаружен цикл в `extends`: {}",
             canonical.display()
@@ -131,10 +130,7 @@ fn load_with_extends_inner(path: &Path, visited: &mut Vec<PathBuf>) -> DmResult<
 
     // Если есть extends — сначала грузим базу, потом мержим текущий сверху.
     if let Some(extends_rel) = cfg.extends.as_ref() {
-        let base_path = path
-            .parent()
-            .unwrap_or(Path::new("."))
-            .join(extends_rel);
+        let base_path = path.parent().unwrap_or(Path::new(".")).join(extends_rel);
         let base = load_with_extends_inner(&base_path, visited)?;
         // cfg — текущий (override), base — унаследованный.
         // deep_merge(base, override): override выигрывает.
@@ -213,7 +209,10 @@ pub fn deep_merge(mut base: Config, override_cfg: Config) -> Config {
 
 /// Слияние двух ServiceConfig: override перекрывает base для скаляров,
 /// векторы конкатенируются (с дедупликацией).
-fn merge_service(mut base: crate::config::ServiceConfig, ov: crate::config::ServiceConfig) -> crate::config::ServiceConfig {
+fn merge_service(
+    mut base: crate::config::ServiceConfig,
+    ov: crate::config::ServiceConfig,
+) -> crate::config::ServiceConfig {
     use crate::project::ServiceLanguage;
     // Скаляры/опциональные: override если задано.
     if !ov.path.is_empty() {
@@ -406,21 +405,17 @@ mod tests {
     use super::*;
     use std::env;
 
-    fn write_tmp(name: &str, content: &str) -> PathBuf {
-        let dir = env::temp_dir().join("dm_loader_test");
-        std::fs::create_dir_all(&dir).unwrap();
-        let p = dir.join(name);
-        std::fs::write(&p, content).unwrap();
-        p
-    }
-
     #[test]
     fn discovers_config_in_parent() {
         let tmp = env::temp_dir().join("dm_test_discover2");
         let sub = tmp.join("deep/sub");
         std::fs::create_dir_all(&sub).unwrap();
         let cfg_path = tmp.join(CONFIG_FILENAME);
-        std::fs::write(&cfg_path, "version: 1\nservices:\n  a:\n    path: ./a\n    language: rust\n").unwrap();
+        std::fs::write(
+            &cfg_path,
+            "version: 1\nservices:\n  a:\n    path: ./a\n    language: rust\n",
+        )
+        .unwrap();
         let found = discover_config(&sub).unwrap();
         assert_eq!(found, paths::simplify(&cfg_path));
         let _ = std::fs::remove_dir_all(&tmp);
@@ -525,7 +520,9 @@ services:
         assert_eq!(interp_string("hello {{name}}", &ctx), "hello world");
         assert_eq!(interp_string("{{name}}-{{name}}", &ctx), "world-world");
         // ${VAR} из env процесса.
-        unsafe { std::env::set_var("DM_TEST_INTERP", "xyz"); }
+        unsafe {
+            std::env::set_var("DM_TEST_INTERP", "xyz");
+        }
         assert_eq!(interp_string("v=${DM_TEST_INTERP}", &ctx), "v=xyz");
     }
 }
