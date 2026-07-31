@@ -43,8 +43,8 @@ fn rss_linux(pid: u32) -> Option<u64> {
     let status = std::fs::read_to_string(format!("/proc/{pid}/status")).ok()?;
     for line in status.lines() {
         if let Some(rest) = line.strip_prefix("VmRSS:") {
-            // "VmRSS:\t      1234 kB"
-            let kb: u64 = rest.trim().split_whitespace().next()?.parse().ok()?;
+            // "VmRSS:\t      1234 kB" — split_whitespace сам игнорирует краевые пробелы.
+            let kb: u64 = rest.split_whitespace().next()?.parse().ok()?;
             return Some(kb * 1024);
         }
     }
