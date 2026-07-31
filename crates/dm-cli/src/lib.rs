@@ -6,7 +6,8 @@
     dead_code,
     clippy::needless_borrow,
     clippy::redundant_clone,
-    clippy::useless_conversion
+    clippy::useless_conversion,
+    clippy::collapsible_if
 )]
 
 //! # dm-cli

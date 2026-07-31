@@ -324,10 +324,9 @@ fn migration_timestamp() -> String {
         if let Ok(out) = std::process::Command::new("date")
             .arg("+%Y%m%d%H%M%S")
             .output()
+            && let Ok(s) = String::from_utf8(out.stdout)
         {
-            if let Ok(s) = String::from_utf8(out.stdout) {
-                return s.trim().to_string();
-            }
+            return s.trim().to_string();
         }
     }
     // Заглушка: секунды от старта процесса (однозначно в рамках сессии).

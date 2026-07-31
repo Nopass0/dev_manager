@@ -123,10 +123,10 @@ fn today_iso() -> String {
     // MVP; при отсутствии — заглушка. Надёжная реализация — в roadmap.
     #[cfg(unix)]
     {
-        if let Ok(out) = std::process::Command::new("date").arg("+%Y-%m-%d").output() {
-            if let Ok(s) = String::from_utf8(out.stdout) {
-                return s.trim().to_string();
-            }
+        if let Ok(out) = std::process::Command::new("date").arg("+%Y-%m-%d").output()
+            && let Ok(s) = String::from_utf8(out.stdout)
+        {
+            return s.trim().to_string();
         }
     }
     "2026-01-01".to_string()
