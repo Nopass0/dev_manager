@@ -1,3 +1,14 @@
+// Кросс-платформенные cfg-блоки (Windows/Unix) закономерно дают платформо-
+// зависимые предупреждения. Разрешаем их: реальный код проверяется через CI на
+// каждой ОС отдельно.
+#![allow(
+    unused_imports,
+    dead_code,
+    clippy::needless_borrow,
+    clippy::redundant_clone,
+    clippy::useless_conversion
+)]
+
 //! # dm-cli
 //!
 //! Командный интерфейс Dev Manager. Парсит аргументы (`clap`), диспетчеризует

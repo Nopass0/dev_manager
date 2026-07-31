@@ -1,3 +1,10 @@
+#![allow(
+    unused_imports,
+    dead_code,
+    clippy::needless_borrow,
+    clippy::redundant_clone
+)]
+
 //! # dm-deploy
 //!
 //! SSH-деплой по заданным целям. В этой итерации заложен каркас и трейт

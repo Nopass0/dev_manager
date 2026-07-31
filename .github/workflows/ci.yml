@@ -42,7 +42,11 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Clippy
-        run: cargo clippy --workspace -- -D warnings
+        # Проект кросс-платформенный: cfg-блоки для Windows/Unix закономерно дают
+        # платформо-зависимые предупреждения, которые нельзя проверить на одном
+        # runner'е. Поэтому -D warnings + allow атрибуты в коде для платформенных
+        # модулей; реальный clippy-pass на каждой ОС отдельно.
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Build
         run: cargo build --workspace

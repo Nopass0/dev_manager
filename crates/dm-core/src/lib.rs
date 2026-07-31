@@ -1,3 +1,10 @@
+#![allow(
+    unused_imports,
+    dead_code,
+    clippy::needless_borrow,
+    clippy::redundant_clone
+)]
+
 //! # dm-core
 //!
 //! Ядро [`Dev Manager`](..). Содержит фундаментальные типы и операции, на которые

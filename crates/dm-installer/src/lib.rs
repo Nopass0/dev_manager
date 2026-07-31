@@ -1,3 +1,10 @@
+#![allow(
+    unused_imports,
+    dead_code,
+    clippy::needless_borrow,
+    clippy::redundant_clone
+)]
+
 //! # dm-installer
 //!
 //! Установка бинарника Dev Manager в системный PATH и генерация oneliner-скриптов

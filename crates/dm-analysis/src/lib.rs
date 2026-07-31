@@ -1,3 +1,10 @@
+#![allow(
+    unused_imports,
+    dead_code,
+    clippy::needless_borrow,
+    clippy::redundant_clone
+)]
+
 //! # dm-analysis
 //!
 //! Анализатор исходного кода на базе tree-sitter. Извлекает символы (функции,

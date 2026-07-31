@@ -1,3 +1,10 @@
+#![allow(
+    unused_imports,
+    dead_code,
+    clippy::needless_borrow,
+    clippy::redundant_clone
+)]
+
 //! # dm-vcs
 //!
 //! Git-автоматизация для Dev Manager. Все операции выполняются через системный
