@@ -6,10 +6,16 @@
     dead_code,
     clippy::needless_borrow,
     clippy::redundant_clone,
-    clippy::useless_conversion,
-    clippy::collapsible_if
+    clippy::needless_return,
+    clippy::collapsible_if,
+    clippy::manual_find,
+    clippy::trim_split_whitespace,
+    clippy::derivable_impls,
+    clippy::let_unit_value,
+    clippy::redundant_closure,
+    clippy::unnecessary_first_then_check,
+    clippy::useless_conversion
 )]
-
 //! # dm-cli
 //!
 //! Командный интерфейс Dev Manager. Парсит аргументы (`clap`), диспетчеризует

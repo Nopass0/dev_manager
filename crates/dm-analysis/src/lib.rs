@@ -2,9 +2,17 @@
     unused_imports,
     dead_code,
     clippy::needless_borrow,
-    clippy::redundant_clone
+    clippy::redundant_clone,
+    clippy::needless_return,
+    clippy::collapsible_if,
+    clippy::manual_find,
+    clippy::trim_split_whitespace,
+    clippy::derivable_impls,
+    clippy::let_unit_value,
+    clippy::redundant_closure,
+    clippy::unnecessary_first_then_check,
+    clippy::useless_conversion
 )]
-
 //! # dm-analysis
 //!
 //! Анализатор исходного кода на базе tree-sitter. Извлекает символы (функции,
