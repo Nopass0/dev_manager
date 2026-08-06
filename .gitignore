@@ -4,6 +4,10 @@
 **/target
 *.rs.bk
 
+# --- Build artifacts ---
+/dist
+/dist/*
+
 # --- IDE / редакторы ---
 .vscode/
 .idea/
