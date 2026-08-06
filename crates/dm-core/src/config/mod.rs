@@ -12,7 +12,8 @@ pub use loader::{
     env_overlay_filename, load_config, load_resolved_config,
 };
 pub use schema::{
-    Config, DatabaseConfig, DatabaseConnection, DeployTarget, DeployTrigger, DockerConfig,
-    HealthCheckConfig, HealthCheckKind, LinterConfig, LogsConfig, ProfileConfig, ResourceAction,
-    ResourceLimits, RestartBehavior, RestartPolicy, RuntimeConfig, ServiceConfig, TestsConfig,
+    BuildConfig, BuildStage, Config, DatabaseConfig, DatabaseConnection, DeployTarget,
+    DeployTrigger, DockerConfig, HealthCheckConfig, HealthCheckKind, LinterConfig, LogsConfig,
+    ProfileConfig, ResourceAction, ResourceLimits, RestartBehavior, RestartPolicy, RuntimeConfig,
+    ServiceConfig, TestsConfig,
 };

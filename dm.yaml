@@ -1,0 +1,38 @@
+# Dev Manager — собственный конфиг (dogfooding: dm собирается через dm).
+version: 1
+project_name: dev_manager
+env_file: .env
+
+services:
+  dm:
+    path: .
+    language: rust
+    run: "cargo run -- --help"
+    watch: false
+    restart_on_change: false
+
+defaults:
+  watch: true
+
+build:
+  output_dir: dist
+  clean: true
+  stages:
+    - name: "build dm (debug)"
+      source: .
+      command: "cargo build --workspace"
+      artifacts:
+        - "target/debug/dm.exe"
+        - "target/debug/dm"
+      dest_subdir: ""
+
+linter:
+  dr: true
+  kiss: true
+  unused_code: true
+  duplicates: true
+
+aliases:
+  t: "cargo test --workspace"
+  r: "cargo run --"
+  c: "cargo clippy --workspace -- -D warnings"

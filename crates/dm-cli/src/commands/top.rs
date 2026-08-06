@@ -27,9 +27,8 @@ pub async fn run() -> DmResult<()> {
 
     for (name, svc) in &config.services {
         let port = default_port_for_language(svc.language);
-        let busy = tokio::net::TcpStream::connect(("127.0.0.1", port))
-            .await
-            .is_ok();
+        // Точный bind-test: реальная проверка, занят ли порт прослушивателем.
+        let busy = dm_runtime::netutil::port_is_in_use(port);
         let status = if busy {
             "🟢 слушает"
         } else {

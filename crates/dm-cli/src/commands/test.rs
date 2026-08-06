@@ -1,13 +1,15 @@
 //! `dm test [svc]` — запуск тестов сервисов.
 //!
 //! Использует `tests.cmd` из конфига сервиса. Если команда не задана — пробует
-//! дефолт для языка (cargo test / npm test / go test).
+//! дефолт для языка (cargo test / npm test / go test). Вывод тестов стримится
+//! в консоль; для прозрачности показывается и команда, и каталог запуска.
 
 use crate::commands::{TargetArgs, load_project_config};
-use crate::output::{print_system, println_styled, success_style, warn_style};
+use crate::output::{error_style, print_system, println_styled, success_style, warn_style};
+use crate::shell;
 use dm_core::DmResult;
 use dm_core::project::ServiceLanguage;
-use tokio::process::Command;
+use std::path::Path;
 
 /// Точка входа команды.
 pub async fn run(args: TargetArgs) -> DmResult<()> {
@@ -28,55 +30,57 @@ pub async fn run(args: TargetArgs) -> DmResult<()> {
             .collect(),
     };
 
+    let mut failed = 0usize;
+    let mut total = 0usize;
     for (name, svc) in targets {
+        total += 1;
         let cmd = match svc.tests.cmd.as_deref() {
             Some(c) => c.to_string(),
             None => match default_test_cmd(svc.language) {
                 Some(c) => c.to_string(),
                 None => {
-                    println_styled(
-                        &format!("пропускаю '{name}': команда тестов не настроена"),
-                        warn_style(),
-                    );
+                    println_styled(&i18n("skipping_no_tests", &[&name]), warn_style());
                     continue;
                 }
             },
         };
-        print_system(&format!("тесты '{name}': {cmd}"));
-        let status = run_shell(&cmd, &root.join(&svc.path)).await;
-        match status {
-            Ok(0) => println_styled(&format!("  ✓ {name} — тесты прошли"), success_style()),
-            Ok(code) => println_styled(
-                &format!("  ✗ {name} — тесты упали (код {code})"),
-                warn_style(),
-            ),
-            Err(e) => println_styled(
-                &format!("  ✗ {name} — ошибка запуска: {e}"),
-                crate::output::error_style(),
-            ),
+        // Каталог запуска: корень + путь сервиса (разрешаем относительно корня).
+        let cwd = shell::resolve_dir(&root, &svc.path);
+        print_system(&i18n(
+            "tests_running",
+            &[&name, &cmd, &cwd.display().to_string()],
+        ));
+        match shell::run(&cmd, &cwd) {
+            Ok(0) => println_styled(&i18n("tests_pass", &[&name]), success_style()),
+            Ok(code) => {
+                failed += 1;
+                println_styled(
+                    &i18n("tests_fail_code", &[&name, &code.to_string()]),
+                    error_style(),
+                );
+            }
+            Err(e) => {
+                failed += 1;
+                println_styled(&i18n("tests_fail_err", &[&name, &e]), error_style());
+            }
         }
     }
+    // Сводка.
+    if total > 0 && failed == 0 {
+        println_styled(
+            &i18n("tests_all_pass", &[&total.to_string()]),
+            success_style(),
+        );
+    } else if total > 0 {
+        println_styled(
+            &i18n(
+                "tests_summary",
+                &[&(total - failed).to_string(), &total.to_string()],
+            ),
+            warn_style(),
+        );
+    }
     Ok(())
-}
-
-/// Запускает команду в shell текущей платформы в каталоге `cwd`.
-async fn run_shell(cmd: &str, cwd: &std::path::Path) -> Result<i32, std::io::Error> {
-    #[cfg(windows)]
-    let mut command = {
-        let mut c = Command::new("cmd");
-        c.args(["/C", cmd]);
-        c
-    };
-    #[cfg(not(windows))]
-    let mut command = {
-        let mut c = Command::new("sh");
-        c.args(["-c", cmd]);
-        c
-    };
-    command.current_dir(cwd);
-    command.stdin(std::process::Stdio::null());
-    let status = command.status().await?;
-    Ok(status.code().unwrap_or(-1))
 }
 
 /// Дефолтная команда тестов по языку.
@@ -95,3 +99,26 @@ fn default_test_cmd(lang: ServiceLanguage) -> Option<&'static str> {
         _ => None,
     }
 }
+
+/// Локализованные строки для команды (RU/EN через DM_LANG).
+/// Плейсхолдеры вида %0, %1, %2 подставляются из args.
+fn i18n(key: &str, args: &[&str]) -> String {
+    let tmpl: &str = match key {
+        "skipping_no_tests" => "пропускаю '%0': команда тестов не настроена",
+        "tests_running" => "тесты '%0': %1 (в %2)",
+        "tests_pass" => "  ✓ %0 — тесты прошли",
+        "tests_fail_code" => "  ✗ %0 — тесты упали (код %1)",
+        "tests_fail_err" => "  ✗ %0 — ошибка запуска: %1",
+        "tests_all_pass" => "✓ все тесты прошли (%0 сервисов)",
+        "tests_summary" => "тесты: %0/%1 сервисов прошли",
+        _ => key,
+    };
+    let mut out = tmpl.to_string();
+    for (i, a) in args.iter().enumerate() {
+        out = out.replace(&format!("%{i}"), a);
+    }
+    out
+}
+
+#[allow(dead_code)]
+fn _unused(_p: &Path) {}

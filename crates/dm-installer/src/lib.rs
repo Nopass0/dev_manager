@@ -41,19 +41,38 @@ pub struct InstallResult {
 /// Функция кросс-платформенная: на Windows правит реестр через PowerShell-вызов,
 /// на Unix — дописывает строку export в shell rc-файлы.
 pub fn install(binary: &Path) -> DmResult<InstallResult> {
+    install_for(binary, false)
+}
+
+/// То же, что [`install`], но с явным выбором scope установки.
+///
+/// `all_users = true` устанавливает для всех пользователей (Windows: Machine
+/// scope PATH + Program Files; нужен запуск от администратора). По умолчанию
+/// (false) — только для текущего пользователя (User scope).
+pub fn install_for(binary: &Path, all_users: bool) -> DmResult<InstallResult> {
     if !binary.is_file() {
         return Err(DmError::Process(format!(
             "бинарник не найден: {}",
             binary.display()
         )));
     }
-    let bin_dir = target_dir()?;
-    std::fs::create_dir_all(&bin_dir)?;
+    let bin_dir = target_dir_for(all_users)?;
+    // На Windows при all_users может потребоваться повышение прав для Program Files.
+    std::fs::create_dir_all(&bin_dir).map_err(|e| {
+        if all_users {
+            DmError::Process(format!(
+                "не удалось создать {} (нужны права администратора?): {e}",
+                bin_dir.display()
+            ))
+        } else {
+            DmError::from(e)
+        }
+    })?;
     let bin_name = binary_name();
     let bin_path = bin_dir.join(&bin_name);
     copy_binary(binary, &bin_path)?;
 
-    let path_updated = ensure_in_path(&bin_dir)?;
+    let path_updated = ensure_in_path_for(&bin_dir, all_users)?;
     Ok(InstallResult {
         bin_dir,
         bin_path,
@@ -95,13 +114,26 @@ fn copy_binary(src: &Path, dst: &Path) -> DmResult<()> {
 
 /// Целевой каталог установки по платформе.
 fn target_dir() -> DmResult<PathBuf> {
+    target_dir_for(false)
+}
+
+/// Целевой каталог с учётом scope.
+///
+/// `all_users = true`: Windows → `C:\Program Files\dm` (видно всем), Unix → `/usr/local/bin`.
+/// `all_users = false`: Windows → `%LOCALAPPDATA%\Programs\dm`, Unix → `~/.local/bin`.
+fn target_dir_for(all_users: bool) -> DmResult<PathBuf> {
     if cfg!(windows) {
-        // %LOCALAPPDATA%\Programs\dm
-        let local = std::env::var("LOCALAPPDATA")
-            .map_err(|_| DmError::UnsupportedPlatform("LOCALAPPDATA не задана".to_string()))?;
-        Ok(PathBuf::from(local).join("Programs").join("dm"))
+        if all_users {
+            let pf = std::env::var("ProgramFiles").unwrap_or_else(|_| "C:\\Program Files".into());
+            Ok(PathBuf::from(pf).join("dm"))
+        } else {
+            let local = std::env::var("LOCALAPPDATA")
+                .map_err(|_| DmError::UnsupportedPlatform("LOCALAPPDATA не задана".to_string()))?;
+            Ok(PathBuf::from(local).join("Programs").join("dm"))
+        }
+    } else if all_users {
+        Ok(PathBuf::from("/usr/local/bin"))
     } else {
-        // ~/.local/bin (стандарт XDG); создаётся если нет.
         let dirs = directories::BaseDirs::new().ok_or_else(|| {
             DmError::UnsupportedPlatform("не удалось определить домашний каталог".to_string())
         })?;
@@ -110,20 +142,27 @@ fn target_dir() -> DmResult<PathBuf> {
 }
 
 /// Гарантирует, что `dir` присутствует в пользовательском PATH.
-///
-/// Возвращает true, если PATH был изменён; false — если уже содержал каталог.
 fn ensure_in_path(dir: &Path) -> DmResult<bool> {
+    ensure_in_path_for(dir, false)
+}
+
+/// Гарантирует, что `dir` в PATH. `all_users=true` использует Machine scope
+/// (Windows: `...GetEnvironmentVariable('Path','Machine')`), нужен админ.
+fn ensure_in_path_for(dir: &Path, all_users: bool) -> DmResult<bool> {
     let dir_str = dir.to_string_lossy().into_owned();
     if already_in_path(&dir_str)? {
         return Ok(false);
     }
     #[cfg(windows)]
-    return add_to_windows_path(&dir_str);
+    return add_to_windows_path(&dir_str, all_users);
     #[cfg(unix)]
-    return add_to_unix_shell_rc(&dir_str);
+    {
+        let _ = all_users;
+        return add_to_unix_shell_rc(&dir_str);
+    }
     #[cfg(not(any(unix, windows)))]
     {
-        let _ = dir;
+        let _ = (dir, all_users);
         Err(DmError::UnsupportedPlatform(
             "установка в PATH не реализована для этой платформы".to_string(),
         ))
@@ -172,15 +211,18 @@ fn add_to_unix_shell_rc(dir: &str) -> DmResult<bool> {
 }
 
 #[cfg(windows)]
-fn add_to_windows_path(dir: &str) -> DmResult<bool> {
-    // Используем PowerShell для надёжной работы с реестром через [Environment].
+fn add_to_windows_path(dir: &str, all_users: bool) -> DmResult<bool> {
+    // Machine scope (все пользователи) требует прав администратора, но PATH
+    // становится видимым всем. User scope — только текущий пользователь.
+    let scope = if all_users { "Machine" } else { "User" };
     let ps = format!(
         r#"
-$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-if ($userPath -split ';' -contains '{dir}') {{ 'already' }}
+$scope = '{scope}'
+$cur = [Environment]::GetEnvironmentVariable('Path', $scope)
+if ($cur -split ';' -contains '{dir}') {{ 'already' }}
 else {{
-    $new = if ($userPath) {{ $userPath + ';{dir}' }} else {{ '{dir}' }}
-    [Environment]::SetEnvironmentVariable('Path', $new, 'User')
+    $new = if ($cur) {{ $cur + ';{dir}' }} else {{ '{dir}' }}
+    [Environment]::SetEnvironmentVariable('Path', $new, $scope)
     $env:Path = "$env:Path;{dir}"
     'added'
 }}

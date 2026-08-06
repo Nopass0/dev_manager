@@ -27,9 +27,8 @@ pub async fn run() -> DmResult<()> {
             .set_header(vec!["Сервис", "Язык", "Порт", "Статус"]);
         for (name, svc) in &config.services {
             let port = default_port(svc.language);
-            let busy = tokio::net::TcpStream::connect(("127.0.0.1", port))
-                .await
-                .is_ok();
+            // Точный bind-test для определения статуса сервиса.
+            let busy = dm_runtime::netutil::port_is_in_use(port);
             let status = if busy {
                 "🟢 слушает"
             } else {

@@ -18,7 +18,9 @@
 //! Сам по себе этот crate не содержит `main` — точка входа живёт в `dm` crate
 //! и просто вызывает [`Cli::parse`] и [`run`] отсюда.
 
+pub mod board;
 pub mod commands;
+pub mod i18n;
 pub mod output;
 pub mod select;
 pub mod shell;
@@ -41,6 +43,10 @@ pub struct Cli {
     /// Также читается из переменной `DM_ENV`.
     #[arg(long, global = true)]
     pub env: Option<String>,
+
+    /// Язык интерфейса: `ru` (русский) или `en` (английский). По умолчанию — авто.
+    #[arg(long, global = true)]
+    pub lang: Option<String>,
 
     /// Подкоманда.
     #[command(subcommand)]
@@ -91,8 +97,8 @@ pub enum Command {
         #[command(subcommand)]
         action: commands::EnvAction,
     },
-    /// Установить этот бинарник в PATH.
-    Install,
+    /// Установить этот бинарник в PATH (--all-users для всех пользователей).
+    Install(commands::InstallArgs),
     /// Вывести версию и информацию о сборке.
     Version,
     /// Диагностика окружения: версии инструментов, порты, конфликты.
@@ -129,6 +135,8 @@ pub enum Command {
     Hooks(commands::HooksArgs),
     /// Запускать команду при изменении файлов (универсальный watcher-runner).
     Watch(commands::WatchArgs),
+    /// Локальная kanban-доска задач (HTTP-сервер :11001).
+    Board { port: Option<u16> },
     /// Управление dm.yaml из CLI.
     Config(commands::ConfigArgs),
     /// Скаффолд нового сервиса.
@@ -169,6 +177,9 @@ pub enum Command {
 ///
 /// Возвращает `DmResult`, который `main` превратит в код выхода.
 pub async fn run(cli: Cli) -> DmResult<()> {
+    // Инициализируем язык интерфейса (--lang / DM_LANG / системный).
+    i18n::init(cli.lang.as_deref());
+
     // Сохраняем выбранное окружение в поток-локальную переменную для команд.
     if let Some(env) = &cli.env {
         // Также экспонируем через std::env, чтобы load_project_config подхватил.
@@ -191,7 +202,7 @@ pub async fn run(cli: Cli) -> DmResult<()> {
         Command::Deploy { name } => commands::deploy::run(&name).await,
         Command::Cache { action } => commands::cache::run(action).await,
         Command::Env { action } => commands::env::run(action).await,
-        Command::Install => commands::install::run().await,
+        Command::Install(args) => commands::install::run(args).await,
         Command::Version => {
             println!("dm {}", env!("CARGO_PKG_VERSION"));
             Ok(())
@@ -213,6 +224,7 @@ pub async fn run(cli: Cli) -> DmResult<()> {
         Command::Format => commands::format::run().await,
         Command::Hooks(args) => commands::hooks::run(args).await,
         Command::Watch(args) => commands::watch::run(args).await,
+        Command::Board { port } => commands::board_cmd::run(port).await,
         Command::Config(args) => commands::config::run(args).await,
         Command::New(args) => commands::new::run(args).await,
         Command::Dashboard => commands::dashboard::run().await,

@@ -80,6 +80,10 @@ pub struct Config {
     #[serde(default)]
     pub docker: DockerConfig,
 
+    /// Настройки сборочного пайплайна (multi-stage build в единую папку).
+    #[serde(default)]
+    pub build: BuildConfig,
+
     /// Настройки уведомлений (webhook + desktop).
     ///
     /// NB: сам тип живёт в `dm-runtime`, здесь — лишь raw-map для серилизации,
@@ -153,6 +157,56 @@ impl Default for DockerConfig {
 
 fn default_compose_file() -> String {
     "docker-compose.yml".to_string()
+}
+
+/// Сборочный пайплайн: упорядоченные этапы сборки артефактов в единую папку.
+///
+/// Позволяет собирать multi-language проект (например, DLL на C++ + приложение
+/// на Rust) в один чистый каталог `output_dir` с правильным порядком.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(deny_unknown_fields, default)]
+pub struct BuildConfig {
+    /// Куда складывать готовые артефакты (относительно корня проекта).
+    /// По умолчанию `dist/`. Каталог очищается перед сборкой.
+    #[serde(default = "default_build_output")]
+    pub output_dir: String,
+    /// Упорядоченные этапы сборки. Каждый этап — команда + артефакты для копирования.
+    #[serde(default)]
+    pub stages: Vec<BuildStage>,
+    /// Очищать ли output_dir перед сборкой (по умолчанию true).
+    #[serde(default = "default_true_bool")]
+    pub clean: bool,
+}
+
+fn default_build_output() -> String {
+    "dist".to_string()
+}
+fn default_true_bool() -> bool {
+    true
+}
+
+/// Один этап сборочного пайплайна.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(deny_unknown_fields, default)]
+pub struct BuildStage {
+    /// Имя этапа (для логов).
+    #[serde(default)]
+    pub name: String,
+    /// Сервис/каталог, где выполнять команду (имя сервиса из `services:` или путь).
+    #[serde(default)]
+    pub source: String,
+    /// Команда сборки (например, `cargo build --release` или `nasm -f win64`).
+    #[serde(default)]
+    pub command: String,
+    /// Glob-шаблоны артефактов для копирования в output_dir
+    /// (например, `target/release/*.dll`, `target/release/myapp.exe`).
+    /// Относительно каталога source.
+    #[serde(default)]
+    pub artifacts: Vec<String>,
+    /// Подкаталог внутри output_dir для артефактов этого этапа
+    /// (пусто = корень output_dir).
+    #[serde(default)]
+    pub dest_subdir: String,
 }
 
 fn default_version() -> u32 {

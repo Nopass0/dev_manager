@@ -9,7 +9,9 @@ description = "Командный интерфейс Dev Manager (`dm`)."
 [dependencies]
 dm-core.workspace = true
 dm-runtime.workspace = true
+serde.workspace = true
 serde_yaml.workspace = true
+serde_json.workspace = true
 dm-vcs.workspace = true
 dm-analysis.workspace = true
 dm-deploy.workspace = true

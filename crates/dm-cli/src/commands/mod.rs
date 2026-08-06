@@ -7,6 +7,7 @@ use dm_core::{Config, DmResult};
 use std::path::PathBuf;
 
 pub mod alias;
+pub mod board_cmd;
 pub mod build;
 pub mod cache;
 pub mod clean;
@@ -259,8 +260,6 @@ pub enum ConfigAction {
 #[derive(Debug, Clone, clap::Args)]
 pub struct InitArgs {
     /// Создать проект из шаблона (без = только dm.yaml).
-    /// Доступно: bun-elysia, bun-express, go-api, rust-axum, next-shadcn,
-    /// react-vite, python-fastapi. Список: `dm init --list-templates`.
     #[arg(long)]
     pub template: Option<String>,
     /// Показать список доступных шаблонов и выйти.
@@ -269,6 +268,14 @@ pub struct InitArgs {
     /// Имя проекта/сервиса для шаблона (по умолчанию — имя каталога).
     #[arg(long)]
     pub name: Option<String>,
+}
+
+/// Аргументы `dm install`.
+#[derive(Debug, Clone, clap::Args)]
+pub struct InstallArgs {
+    /// Установить для всех пользователей (нужны права администратора/sudo).
+    #[arg(long)]
+    pub all_users: bool,
 }
 
 /// Аргументы `dm new`.

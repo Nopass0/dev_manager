@@ -2,10 +2,15 @@
 //!
 //! Без аргументов: список процессов, слушающих типичные dev-порты. С `--free=N`
 //! завершает процесс, занимающий порт N (через платформенную утилиту).
+//!
+//! Проверка занятости использует **реальный bind-test** (`port_is_in_use`), а не
+//! `connect`: это корректно определяет порт, который кто-то уже слушает, и не
+//! даёт ложных срабатываний на TIME_WAIT.
 
 use crate::commands::PortsArgs;
 use crate::output::{print_system, println_styled, success_style, warn_style};
 use dm_core::DmResult;
+use dm_runtime::netutil::port_is_in_use;
 use std::process::Command;
 
 /// Точка входа команды.
@@ -14,12 +19,10 @@ pub async fn run(args: PortsArgs) -> DmResult<()> {
         return free_port(port).await;
     }
     print_system("активные слушатели на типичных dev-портах:");
-    let ports = [3000, 3001, 5173, 8080, 5432, 6379, 9000];
+    let ports = [3000, 3001, 5173, 8080, 5432, 6379, 9000, 11001];
     for port in ports {
-        let busy = tokio::net::TcpStream::connect(("127.0.0.1", port))
-            .await
-            .is_ok();
-        if busy {
+        // Точный bind-test: реальная попытка занять порт.
+        if port_is_in_use(port) {
             let owner = owner_of_port(port);
             println_styled(&format!("  • {port} занят {owner}"), warn_style());
         }

@@ -1,0 +1,66 @@
+# =============================================================================
+#  Пример: Mini-OS (Assembler boot + Rust kernel) в QEMU с hot-reload
+# =============================================================================
+#  Демонстрирует build-pipeline: сначала ассемблерный bootloader, потом Rust
+#  kernel, потом линковка в единый .bin, и запуск в QEMU. При изменении исходников
+#  dm пересобирает и перезапускает QEMU.
+#
+#  Структура:
+#    os-qemu/
+#    ├── dm.yaml
+#    ├── boot/             ← ассемблерный загрузчик (x86, NASM)
+#    │   └── boot.asm
+#    ├── kernel/           ← Rust ядро (no_std)
+#    │   ├── Cargo.toml
+#    │   └── src/main.rs
+#    └── linker.ld         ← скрипт линкера
+#
+#  Требования: nasm, qemu-system-i386, rust nightly (no_std).
+# =============================================================================
+
+version: 1
+project_name: mini-os
+
+services:
+  qemu:
+    path: .
+    language: other
+    # Запуск QEMU с собранным образом. dm пересоберёт через build-pipeline
+    # при изменении исходников (watcher), затем перезапустит эту команду.
+    run: "qemu-system-i386 -drive format=raw,file=dist/os.bin -monitor stdio"
+    watch: true
+    restart_on_change: true
+    order: 10
+
+# Build-pipeline: boot.asm → kernel (Rust no_std) → линковка → os.bin в dist/.
+build:
+  output_dir: dist
+  clean: true
+  stages:
+    - name: "1. Ассемблер bootloader"
+      source: ./boot
+      command: "nasm -f elf32 boot.asm -o boot.o"
+      artifacts:
+        - "boot.o"
+
+    - name: "2. Rust kernel (no_std)"
+      source: ./kernel
+      command: "cargo build --release"
+      artifacts:
+        - "target/release/libkernel.a"
+
+    - name: "3. Линковка в единый образ"
+      source: .
+      command: "ld -m elf_i386 -T linker.ld -o dist/os.bin boot/boot.o kernel/target/release/libkernel.a"
+      artifacts:
+        - "os.bin"
+
+linter:
+  dr: false
+  kiss: false
+  unused_code: true
+  duplicates: true
+
+aliases:
+  run: "dm build && dm start"
+  asm: "nasm -f elf32 boot/boot.asm -o boot/boot.o"

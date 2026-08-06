@@ -23,6 +23,7 @@
 
 pub mod logs;
 pub mod monitor;
+pub mod netutil;
 pub mod notify;
 pub mod process;
 pub mod spawn_strategy;
