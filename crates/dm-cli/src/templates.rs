@@ -27,11 +27,16 @@ pub fn all_templates() -> Vec<Template> {
     vec![
         bun_elysia(),
         bun_express(),
+        bun_htmx(),
         go_api(),
+        go_grpc(),
         rust_axum(),
+        rust_lib(),
         next_shadcn(),
         react_vite(),
+        vite_svelte(),
         python_fastapi(),
+        csharp_api(),
     ]
 }
 
@@ -494,6 +499,290 @@ def test_health():
         language: "python",
         run_command: "uvicorn main:app --reload --port 8000",
         test_command: Some("pytest"),
+        files,
+    }
+}
+
+// === Backend: Bun + Htmx (server-rendered) ===
+
+fn bun_htmx() -> Template {
+    let mut files = BTreeMap::new();
+    files.insert(
+        "package.json",
+        r#"{
+  "name": "{{name}}",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "test": "bun test"
+  },
+  "dependencies": {}
+}
+"#,
+    );
+    files.insert(
+        "src/index.ts",
+        r##"// Bun + Htmx: server-rendered HTML with zero-build frontend.
+const port = 3000;
+
+const html = (body: string) => `<!DOCTYPE html>
+<html><head>
+  <meta charset="UTF-8">
+  <script src="https://unpkg.com/htmx.org@1.9"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+</head><body>${body}</body></html>`;
+
+export default {
+  port,
+  fetch(req: Request) {
+    const url = new URL(req.url);
+    if (url.pathname === "/health") {
+      return new Response("ok", { status: 200 });
+    }
+    if (url.pathname === "/api/count") {
+      const n = Math.floor(Math.random() * 100);
+      return new Response(`<div id="result">Random: <strong>${n}</strong></div>`, {
+        headers: { "Content-Type": "text/html" },
+      });
+    }
+    return new Response(
+      html(`<h1>{{name}}</h1>
+        <button hx-get="/api/count" hx-target="#result" hx-swap="innerHTML">Roll</button>
+        <div id="result">Click the button</div>`),
+      { headers: { "Content-Type": "text/html" } },
+    );
+  },
+};
+console.log(`🦊 {{name}} (htmx) on http://localhost:${port}`);
+"##,
+    );
+    files.insert(".gitignore", "node_modules/\n*.log\n.env\n");
+    Template {
+        name: "bun-htmx",
+        description: "Backend on Bun + Htmx (server-rendered, zero JS build)",
+        language: "bun",
+        run_command: "bun run dev",
+        test_command: Some("bun test"),
+        files,
+    }
+}
+
+// === Backend: Go + gRPC ===
+
+fn go_grpc() -> Template {
+    let mut files = BTreeMap::new();
+    files.insert("go.mod", "module {{name}}\n\ngo 1.22\n");
+    files.insert(
+        "main.go",
+        r#"package main
+
+import (
+	"fmt"
+	"net"
+)
+
+func main() {
+	lis, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("🚀 {{name}} gRPC server on :50051")
+	// TODO: register gRPC services here
+	// grpcServer := grpc.NewServer()
+	// grpcServer.Serve(lis)
+	for {
+		conn, err := lis.Accept()
+		if err != nil { continue }
+		conn.Close()
+	}
+}
+"#,
+    );
+    files.insert(".gitignore", "*.exe\n*.log\n.env\n");
+    Template {
+        name: "go-grpc",
+        description: "Backend on Go + gRPC server (port 50051)",
+        language: "go",
+        run_command: "go run .",
+        test_command: Some("go test ./..."),
+        files,
+    }
+}
+
+// === Library: Rust (no binary) ===
+
+fn rust_lib() -> Template {
+    let mut files = BTreeMap::new();
+    files.insert(
+        "Cargo.toml",
+        r#"[package]
+name = "{{name}}"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "{{name}}"
+path = "src/lib.rs"
+
+[dependencies]
+"#,
+    );
+    files.insert(
+        "src/lib.rs",
+        r#"//! # {{name}}
+//!
+//! Documentation for the `{{name}}` library.
+
+/// Adds two numbers. Example of a public API.
+pub fn add(a: i64, b: i64) -> i64 {
+    a + b
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add() {
+        assert_eq!(add(2, 3), 5);
+    }
+}
+"#,
+    );
+    files.insert(".gitignore", "/target\n*.log\n");
+    Template {
+        name: "rust-lib",
+        description: "Rust library (no binary, with tests)",
+        language: "rust",
+        run_command: "cargo check",
+        test_command: Some("cargo test"),
+        files,
+    }
+}
+
+// === Backend: C# + ASP.NET Minimal API ===
+
+fn csharp_api() -> Template {
+    let mut files = BTreeMap::new();
+    files.insert(
+        "{{name}}.csproj",
+        r#"<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>{{name}}</RootNamespace>
+  </PropertyGroup>
+</Project>
+"#,
+    );
+    files.insert(
+        "Program.cs",
+        r#"var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
+
+// Health endpoint for dm.
+app.MapGet("/health", () => new { Status = "ok" });
+app.MapGet("/", () => new { Hello = "{{name}}" });
+
+app.Run("http://0.0.0.0:5000");
+Console.WriteLine("🚀 {{name}} on http://localhost:5000");
+"#,
+    );
+    files.insert(".gitignore", "bin/\nobj/\n*.log\n");
+    Template {
+        name: "csharp-api",
+        description: "Backend on C# + ASP.NET Minimal API (port 5000)",
+        language: "csharp",
+        run_command: "dotnet run",
+        test_command: Some("dotnet test"),
+        files,
+    }
+}
+
+// === Frontend: SvelteKit + Vite + Tailwind ===
+
+fn vite_svelte() -> Template {
+    let mut files = BTreeMap::new();
+    files.insert(
+        "package.json",
+        r#"{
+  "name": "{{name}}",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.1.0",
+    "svelte": "^4.2.0",
+    "vite": "^5.3.0",
+    "tailwindcss": "^3.4.0"
+  }
+}
+"#,
+    );
+    files.insert(
+        "index.html",
+        r#"<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8" /><title>{{name}}</title></head>
+  <body><div id="app"></div><script type="module" src="/src/main.ts"></script></body>
+</html>
+"#,
+    );
+    files.insert(
+        "src/main.ts",
+        r#"import './index.css';
+import App from './App.svelte';
+
+new App({ target: document.getElementById('app')! });
+"#,
+    );
+    files.insert(
+        "src/App.svelte",
+        r#"<script lang="ts">
+  let count = 0;
+</script>
+
+<main class="flex min-h-screen items-center justify-center bg-slate-900 text-white">
+  <div class="text-center space-y-4">
+    <h1 class="text-4xl font-bold">{{name}}</h1>
+    <p class="text-slate-400">SvelteKit + Vite + Tailwind</p>
+    <button
+      class="px-6 py-2 bg-orange-500 rounded-lg font-semibold hover:bg-orange-600"
+      on:click={() => count++}
+    >
+      Clicks: {count}
+    </button>
+  </div>
+</main>
+"#,
+    );
+    files.insert(
+        "src/index.css",
+        r#"@tailwind base;
+@tailwind components;
+@tailwind utilities;
+"#,
+    );
+    files.insert(
+        "vite.config.ts",
+        r#"import { defineConfig } from "vite";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+
+export default defineConfig({ plugins: [svelte()] });
+"#,
+    );
+    files.insert(".gitignore", "node_modules/\ndist/\n*.log\n");
+    Template {
+        name: "vite-svelte",
+        description: "Frontend on SvelteKit + Vite + Tailwind",
+        language: "vite",
+        run_command: "npm run dev",
+        test_command: None,
         files,
     }
 }

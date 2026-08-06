@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Dev Manager (dm) — unified microservices development manager: orchestrate, automate git, analyze code, scaffold projects, and deploy from one console. Rust + tree-sitter. Cross-platform.">
+  <meta name="keywords" content="dev manager, dm, microservices, monorepo, orchestration, hot reload, tree-sitter, developer tools, rust, cli, dx, developer experience">
+  <meta property="og:title" content="Dev Manager — Unified Microservices Development Manager">
+  <meta property="og:description" content="Orchestrate, automate git, analyze code, scaffold projects, and deploy from one console. Rust + tree-sitter. Cross-platform.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nopass0.github.io/dev_manager/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Dev Manager — DevOps from one console">
+  <meta name="twitter:description" content="55+ commands for microservice orchestration, git automation, code analysis, project templates, and deployment.">
+  <title>Dev Manager — Unified Development Manager</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+  <style>
+    :root { --bg:#0f172a; --surface:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --accent:#f97316; --accent2:#38bdf8; --green:#22c55e; --border:#334155; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.7; }
+    a { color:var(--accent2); text-decoration:none; transition:color .2s; }
+    a:hover { color:var(--accent); }
+    /* Hero */
+    .hero { text-align:center; padding:60px 20px 40px; background:linear-gradient(135deg,#0f172a,#1e293b); border-bottom:1px solid var(--border); }
+    .hero h1 { font-size:2.8rem; margin-bottom:8px; background:linear-gradient(135deg,#f97316,#f59e0b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .hero .tagline { font-size:1.2rem; color:var(--muted); max-width:640px; margin:0 auto 24px; }
+    .badges { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:24px; }
+    .badges img { height:22px; }
+    .cta { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .cta a { padding:10px 24px; border-radius:8px; font-weight:600; font-size:.95rem; }
+    .cta .primary { background:var(--accent); color:#fff; }
+    .cta .primary:hover { background:#ea580c; color:#fff; }
+    .cta .secondary { background:var(--surface); color:var(--text); border:1px solid var(--border); }
+    /* Code block */
+    .code-block { max-width:560px; margin:24px auto 0; text-align:left; background:#020617; border:1px solid var(--border); border-radius:10px; padding:16px; font-family:ui-monospace,monospace; font-size:.85rem; overflow-x:auto; }
+    .code-block .comment { color:#64748b; }
+    .code-block .cmd { color:var(--accent2); }
+    .code-block .flag { color:var(--accent); }
+    .code-block .str { color:var(--green); }
+    /* Layout */
+    .container { max-width:960px; margin:0 auto; padding:40px 20px; }
+    section { margin-bottom:48px; }
+    section h2 { font-size:1.8rem; margin-bottom:16px; color:var(--text); display:flex; align-items:center; gap:8px; }
+    section h3 { font-size:1.2rem; margin:24px 0 8px; color:var(--accent2); }
+    p { margin-bottom:12px; color:var(--muted); }
+    ul { margin-bottom:16px; padding-left:24px; }
+    li { margin-bottom:6px; color:var(--muted); }
+    code { background:var(--surface); padding:2px 6px; border-radius:4px; font-size:.9em; color:var(--accent); }
+    pre { background:#020617; border:1px solid var(--border); border-radius:8px; padding:14px; overflow-x:auto; margin:12px 0; }
+    pre code { background:none; padding:0; color:var(--text); }
+    /* Grid */
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin:16px 0; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:20px; transition:border-color .2s; }
+    .card:hover { border-color:var(--accent); }
+    .card h4 { font-size:1.1rem; margin-bottom:8px; color:var(--text); }
+    .card p { font-size:.9rem; color:var(--muted); }
+    .card .icon { font-size:1.5rem; margin-bottom:8px; }
+    /* Table */
+    table { width:100%; border-collapse:collapse; margin:16px 0; font-size:.9rem; }
+    th,td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--border); }
+    th { color:var(--accent2); font-weight:600; }
+    td { color:var(--muted); }
+    td:first-child { color:var(--text); font-weight:500; }
+    /* Footer */
+    footer { text-align:center; padding:32px 20px; border-top:1px solid var(--border); color:var(--muted); font-size:.85rem; }
+    /* Nav */
+    nav { background:var(--surface); border-bottom:1px solid var(--border); padding:12px 20px; position:sticky; top:0; z-index:100; }
+    nav .inner { max-width:960px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
+    nav .logo { font-weight:700; color:var(--accent); }
+    nav .links { display:flex; gap:16px; font-size:.9rem; }
+    @media (max-width:640px) { .hero h1{font-size:2rem} nav .links{display:none} }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <a href="/" class="logo">🛠️ dm</a>
+    <div class="links">
+      <a href="#install">Install</a>
+      <a href="#templates">Templates</a>
+      <a href="#commands">Commands</a>
+      <a href="#examples">Examples</a>
+      <a href="https://github.com/Nopass0/dev_manager">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>🛠️ Dev Manager</h1>
+  <p class="tagline">Unified microservices development manager: orchestrate, automate git, analyze code, scaffold projects, and deploy — all from one console.</p>
+  <div class="badges">
+    <img alt="CI" src="https://github.com/Nopass0/dev_manager/actions/workflows/ci.yml/badge.svg">
+    <img alt="Rust" src="https://img.shields.io/badge/Rust-nightly%201.93-dea584?logo=rust&logoColor=white">
+    <img alt="Platforms" src="https://img.shields.io/badge/platforms-Win%20%7C%20Linux%20%7C%20macOS-blue">
+    <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
+    <img alt="Commands" src="https://img.shields.io/badge/commands-55+-orange">
+  </div>
+  <div class="cta">
+    <a href="https://github.com/Nopass0/dev_manager/releases/latest" class="primary">Download</a>
+    <a href="https://github.com/Nopass0/dev_manager" class="secondary">View on GitHub</a>
+  </div>
+  <div class="code-block">
+<span class="comment"># Install (one line):</span>
+<span class="cmd">curl</span> <span class="flag">-fsSL</span> https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.sh <span class="flag">|</span> sh
+
+<span class="comment"># Create a project from template:</span>
+<span class="cmd">dm</span> init <span class="flag">--template</span>=<span class="str">bun-elysia</span> <span class="flag">--name</span>=<span class="str">myapi</span>
+<span class="cmd">dm</span> setup <span class="comment">&amp;&amp; dm start</span>
+  </div>
+</div>
+
+<div class="container">
+
+<section id="install">
+  <h2>📦 Install</h2>
+  <h3>Windows (PowerShell)</h3>
+  <pre><code>iwr -useb https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.ps1 | iex</code></pre>
+  <h3>Linux / macOS</h3>
+  <pre><code>curl -fsSL https://raw.githubusercontent.com/Nopass0/dev_manager/main/scripts/install.sh | sh</code></pre>
+  <h3>From source</h3>
+  <pre><code>git clone https://github.com/Nopass0/dev_manager
+cd dev_manager &amp;&amp; cargo build --release</code></pre>
+  <p>Requires: Rust nightly 1.93, C compiler (MSVC/gcc), <code>git</code> in PATH.</p>
+</section>
+
+<section id="features">
+  <h2>✨ Features</h2>
+  <div class="grid">
+    <div class="card"><div class="icon">🚀</div><h4>Process Orchestration</h4><p>Launch microservices with start queue, delays, health-gated dependencies, and guaranteed process-tree kill. Auto-recovery after 5 crashes.</p></div>
+    <div class="card"><div class="icon">🔄</div><h4>Hot Reload</h4><p>File watcher tracks changes and restarts only the affected service. Smart restart: ignores lock/data files.</p></div>
+    <div class="card"><div class="icon">🧬</div><h4>Flexible Config</h4><p>Inheritance (extends), environments (dm.&lt;env&gt;.yaml), interpolation, defaults, profiles, tags, only_on filter.</p></div>
+    <div class="card"><div class="icon">🏗️</div><h4>Project Templates</h4><p>12+ templates: Bun/Elysia, Go, Rust/axum, Next.js, SvelteKit, Python/FastAPI, C#. One command: <code>dm init --template=...</code></p></div>
+    <div class="card"><div class="icon">🔧</div><h4>Git Automation</h4><p>Multi-repo commit/push/update, commit auto (tree-sitter), conventional commits, auto-CHANGELOG, semver bump.</p></div>
+    <div class="card"><div class="icon">🔍</div><h4>Code Analysis</h4><p>DRY/KISS/unused/duplicates via tree-sitter. grep/replace/refs, secrets scan, dependency graph, Mermaid diagrams.</p></div>
+    <div class="card"><div class="icon">📋</div><h4>Kanban Board</h4><p><code>dm board</code> launches a local kanban board on port 11001 with drag-and-drop tasks in a hashed file.</p></div>
+    <div class="card"><div class="icon">🔔</div><h4>Notifications</h4><p>Webhook (Slack/Telegram/Discord) + desktop toast (auto-dismiss). Alerts on crashes, test failures, limit breaches.</p></div>
+    <div class="card"><div class="icon">🏗️</div><h4>Build Pipeline</h4><p>Multi-stage build: assemble artifacts from different languages (DLL + exe) into one clean <code>dist/</code> folder.</p></div>
+  </div>
+</section>
+
+<section id="templates">
+  <h2>📁 Templates</h2>
+  <p>Create a ready-to-run project with a working health endpoint:</p>
+  <pre><code>dm init --list-templates          # list all
+dm init --template=bun-elysia     # create Bun backend
+dm init --template=next-shadcn    # create Next.js frontend</code></pre>
+  <table>
+    <tr><th>Template</th><th>Stack</th><th>Port</th></tr>
+    <tr><td><code>bun-elysia</code></td><td>Bun + Elysia (TS)</td><td>3000</td></tr>
+    <tr><td><code>bun-express</code></td><td>Bun + Express (TS)</td><td>3000</td></tr>
+    <tr><td><code>bun-htmx</code></td><td>Bun + Htmx (server-rendered)</td><td>3000</td></tr>
+    <tr><td><code>go-api</code></td><td>Go (net/http)</td><td>8080</td></tr>
+    <tr><td><code>go-grpc</code></td><td>Go + gRPC</td><td>50051</td></tr>
+    <tr><td><code>rust-axum</code></td><td>Rust + axum</td><td>8080</td></tr>
+    <tr><td><code>rust-lib</code></td><td>Rust library (no binary)</td><td>—</td></tr>
+    <tr><td><code>python-fastapi</code></td><td>Python + FastAPI</td><td>8000</td></tr>
+    <tr><td><code>csharp-api</code></td><td>C# + ASP.NET Minimal API</td><td>5000</td></tr>
+    <tr><td><code>next-shadcn</code></td><td>Next.js + shadcn/ui + Tailwind</td><td>3000</td></tr>
+    <tr><td><code>react-vite</code></td><td>React + Vite + Tailwind</td><td>5173</td></tr>
+    <tr><td><code>vite-svelte</code></td><td>SvelteKit + Vite + Tailwind</td><td>5173</td></tr>
+  </table>
+</section>
+
+<section id="commands">
+  <h2>🎛️ Commands (55+)</h2>
+  <table>
+    <tr><th>Command</th><th>Description</th></tr>
+    <tr><td><code>dm init --template=</code></td><td>Create project from template</td></tr>
+    <tr><td><code>dm new service &lt;name&gt; --template=</code></td><td>Scaffold new service + auto-add to dm.yaml</td></tr>
+    <tr><td><code>dm start</code></td><td>Start services (with --only/--skip/--tag/--profile/--affected/--dry-run/--wait)</td></tr>
+    <tr><td><code>dm build [--release]</code></td><td>Unified build or multi-stage pipeline</td></tr>
+    <tr><td><code>dm test [svc]</code></td><td>Run service tests</td></tr>
+    <tr><td><code>dm lint [svc]</code></td><td>Code analysis (DRY/KISS/unused/duplicates)</td></tr>
+    <tr><td><code>dm board</code></td><td>Local kanban board on :11001</td></tr>
+    <tr><td><code>dm commit [target] "msg"</code> / <code>dm commit auto</code></td><td>Git automation (multi-repo)</td></tr>
+    <tr><td><code>dm push</code> / <code>dm git stash|branch|rebase</code></td><td>Cross-repo git operations</td></tr>
+    <tr><td><code>dm release patch|minor|major</code></td><td>SemVer bump + auto-CHANGELOG</td></tr>
+    <tr><td><code>dm db migrate|seed|reset|shell</code></td><td>Database operations</td></tr>
+    <tr><td><code>dm docker up|down|logs|ps</code></td><td>Docker/Compose management</td></tr>
+    <tr><td><code>dm gen diagram</code></td><td>Mermaid architecture diagram</td></tr>
+    <tr><td><code>dm grep|replace|refs|secrets</code></td><td>Code search and secrets scan</td></tr>
+    <tr><td><code>dm doctor</code> / <code>dm ports</code> / <code>dm kill</code></td><td>Diagnostics and process management</td></tr>
+    <tr><td><code>dm install --all-users</code></td><td>Install to PATH (user or system scope)</td></tr>
+    <tr><td><code>dm completions &lt;shell&gt;</code></td><td>Shell completion (bash/zsh/fish/powershell)</td></tr>
+  </table>
+</section>
+
+<section id="examples">
+  <h2>📂 Example Projects</h2>
+  <div class="grid">
+    <a href="https://github.com/Nopass0/dev_manager/tree/main/examples/fullstack" class="card"><div class="icon">🌐</div><h4>Fullstack</h4><p>Rust API + Vite frontend + Postgres/Redis in Docker</p></a>
+    <a href="https://github.com/Nopass0/dev_manager/tree/main/examples/multi-repo" class="card"><div class="icon">🌿</div><h4>Multi-repo</h4><p>Microservices in separate git repositories</p></a>
+    <a href="https://github.com/Nopass0/dev_manager/tree/main/examples/polyglot" class="card"><div class="icon">🔀</div><h4>Polyglot</h4><p>Rust + Go + Python with config inheritance & environments</p></a>
+    <a href="https://github.com/Nopass0/dev_manager/tree/main/examples/go-monorepo" class="card"><div class="icon">🐹</div><h4>Go Monorepo</h4><p>Go monorepo with shared package</p></a>
+    <a href="https://github.com/Nopass0/dev_manager/tree/main/examples/python-microservices" class="card"><div class="icon">🐍</div><h4>Python Microservices</h4><p>FastAPI + Celery + Redis</p></a>
+    <a href="https://github.com/Nopass0/dev_manager/tree/main/examples/os-qemu" class="card"><div class="icon">💻</div><h4>OS + QEMU</h4><p>Assembler + Rust mini-OS with build pipeline</p></a>
+  </div>
+</section>
+
+<section>
+  <h2>🤝 Contributing</h2>
+  <p>Contributions are welcome! See <a href="https://github.com/Nopass0/dev_manager/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> for guidelines on adding commands, config fields, language support, and templates.</p>
+  <pre><code>git clone https://github.com/Nopass0/dev_manager
+cd dev_manager
+cargo test --workspace    # 93 tests
+cargo clippy --workspace -- -D warnings</code></pre>
+</section>
+
+</div>
+
+<footer>
+  <p>Dev Manager (dm) — <a href="https://github.com/Nopass0/dev_manager">GitHub</a> · MIT License · Built with Rust 🦀</p>
+</footer>
+
+</body>
+</html>
