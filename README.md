@@ -1,20 +1,3 @@
-<!-- SEO: JSON-LD structured data for Google rich results -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Dev Manager (dm)",
-  "applicationCategory": "DeveloperApplication",
-  "operatingSystem": "Windows, Linux, macOS",
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "description": "Unified microservices development manager: orchestration, git automation, code analysis, project templates, and deployment from a single console.",
-  "programmingLanguage": "Rust",
-  "softwareVersion": "0.9.0",
-  "license": "https://opensource.org/licenses/MIT",
-  "repository": "https://github.com/Nopass0/dev_manager"
-}
-</script>
-
 <p align="center">
   <img src="./assets/hero-banner.svg" alt="Dev Manager — unified microservices development manager" width="880"/>
 </p>
