@@ -296,7 +296,7 @@ dependencies = [
 
 [[package]]
 name = "dm-analysis"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "dm-core",
@@ -312,7 +312,7 @@ dependencies = [
 
 [[package]]
 name = "dm-cli"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anstream 0.6.21",
  "anstyle",
@@ -338,7 +338,7 @@ dependencies = [
 
 [[package]]
 name = "dm-core"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "dunce",
@@ -352,7 +352,7 @@ dependencies = [
 
 [[package]]
 name = "dm-deploy"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "dm-core",
@@ -363,7 +363,7 @@ dependencies = [
 
 [[package]]
 name = "dm-installer"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "directories",
@@ -374,7 +374,7 @@ dependencies = [
 
 [[package]]
 name = "dm-runtime"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anstream 0.6.21",
  "anstyle",
@@ -393,7 +393,7 @@ dependencies = [
 
 [[package]]
 name = "dm-vcs"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "dm-core",
