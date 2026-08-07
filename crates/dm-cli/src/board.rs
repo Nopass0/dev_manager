@@ -317,3 +317,93 @@ render();
 </body></html>"#
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn board_add_task() {
+        let mut b = Board::default();
+        b.add("Write tests", Status::Todo);
+        assert_eq!(b.tasks.len(), 1);
+        assert_eq!(b.tasks[0].title, "Write tests");
+        assert_eq!(b.tasks[0].status, Status::Todo);
+    }
+
+    #[test]
+    fn board_move_task() {
+        let mut b = Board::default();
+        b.add("Task A", Status::Todo);
+        assert!(b.move_task("t1", Status::Doing));
+        assert_eq!(b.tasks[0].status, Status::Doing);
+        assert!(!b.move_task("nonexistent", Status::Done));
+    }
+
+    #[test]
+    fn board_remove_task() {
+        let mut b = Board::default();
+        b.add("Task A", Status::Todo);
+        b.add("Task B", Status::Done);
+        assert!(b.remove("t1"));
+        assert_eq!(b.tasks.len(), 1);
+        assert_eq!(b.tasks[0].title, "Task B");
+        assert!(!b.remove("nonexistent"));
+    }
+
+    #[test]
+    fn board_save_load_roundtrip() {
+        let tmp = std::env::temp_dir().join("dm_board_test.json");
+        let _ = std::fs::remove_file(&tmp);
+        let mut b = Board::default();
+        b.add("Test task", Status::Doing);
+        b.save(&tmp).unwrap();
+        let loaded = Board::load(&tmp).unwrap();
+        assert_eq!(loaded.tasks.len(), 1);
+        assert_eq!(loaded.tasks[0].title, "Test task");
+        assert_eq!(loaded.tasks[0].status, Status::Doing);
+        let _ = std::fs::remove_file(&tmp);
+    }
+
+    #[test]
+    fn board_load_detects_tamper() {
+        let tmp = std::env::temp_dir().join("dm_board_tamper_test.json");
+        // Write a valid board, then tamper with the JSON (keeping old hash).
+        let mut b = Board::default();
+        b.add("Original", Status::Todo);
+        b.save(&tmp).unwrap();
+        // Tamper: replace the JSON part but keep the hash line.
+        let content = std::fs::read_to_string(&tmp).unwrap();
+        let mut lines = content.lines();
+        let hash_line = lines.next().unwrap();
+        let tampered =
+            format!("{hash_line}\n{{\"tasks\":[{{\"id\":\"t1\",\"title\":\"HACKED\"}}]}}");
+        std::fs::write(&tmp, tampered).unwrap();
+        let result = Board::load(&tmp);
+        assert!(result.is_err(), "load should fail on tampered hash");
+        let _ = std::fs::remove_file(&tmp);
+    }
+
+    #[test]
+    fn sha256_hex_deterministic() {
+        let h1 = sha256_hex("hello");
+        let h2 = sha256_hex("hello");
+        assert_eq!(h1, h2, "hash must be deterministic");
+        let h3 = sha256_hex("world");
+        assert_ne!(h1, h3, "different inputs → different hashes");
+    }
+
+    #[test]
+    fn url_decode_works() {
+        assert_eq!(url_decode("hello%20world"), "hello world");
+        assert_eq!(url_decode("a+b"), "a b");
+        assert_eq!(url_decode("no+encoding"), "no encoding");
+    }
+
+    #[test]
+    fn parse_request_line_extracts_method_and_path() {
+        let (method, path) = parse_request_line("GET /api/tasks HTTP/1.1\r\nHost: localhost");
+        assert_eq!(method, "GET");
+        assert_eq!(path, "/api/tasks");
+    }
+}

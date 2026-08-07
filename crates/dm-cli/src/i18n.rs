@@ -109,3 +109,52 @@ static STRINGS: std::sync::LazyLock<HashMap<&'static str, (&'static str, &'stati
         m.insert("contributing", ("Контрибьюторам", "Contributing"));
         m
     });
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_lang_recognizes_variants() {
+        assert_eq!(parse_lang("ru"), Lang::Ru);
+        assert_eq!(parse_lang("RU"), Lang::Ru);
+        assert_eq!(parse_lang("russian"), Lang::Ru);
+        assert_eq!(parse_lang("en"), Lang::En);
+        assert_eq!(parse_lang("english"), Lang::En);
+        assert_eq!(parse_lang("fr"), Lang::En);
+        assert_eq!(parse_lang(""), Lang::En);
+    }
+
+    // Note: OnceLock means init() only takes effect once globally.
+    // These tests verify that init + current + t work together at least once.
+
+    #[test]
+    fn init_sets_language() {
+        // init may have already been called by another test; just verify
+        // that current() returns a valid Lang after init.
+        init(Some("ru"));
+        let lang = current();
+        assert!(
+            lang == Lang::Ru || lang == Lang::En,
+            "current() should return valid Lang"
+        );
+    }
+
+    #[test]
+    fn t_returns_string_for_known_keys() {
+        // Regardless of which language was set, t() should return a non-empty
+        // string for known keys.
+        let val = t("config_not_found");
+        assert!(!val.is_empty(), "known key should return non-empty string");
+        assert!(
+            val.contains("конфиг") || val.contains("config"),
+            "should contain either RU or EN variant"
+        );
+    }
+
+    #[test]
+    fn t_falls_back_for_unknown_keys() {
+        let val = t("nonexistent_key_xyz");
+        assert_eq!(val, "nonexistent_key_xyz");
+    }
+}

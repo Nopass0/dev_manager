@@ -205,3 +205,53 @@ fn build_cmd(lang: ServiceLanguage, release: bool) -> Option<String> {
         _ => return None,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn glob_matches_exact() {
+        assert!(glob_matches("file.txt", "file.txt"));
+        assert!(!glob_matches("file.txt", "other.txt"));
+    }
+
+    #[test]
+    fn glob_matches_star() {
+        assert!(glob_matches("*.txt", "hello.txt"));
+        assert!(glob_matches("*.txt", "world.txt"));
+        assert!(!glob_matches("*.txt", "hello.rs"));
+        assert!(glob_matches("*", "anything"));
+    }
+
+    #[test]
+    fn glob_matches_question() {
+        assert!(glob_matches("?.txt", "a.txt"));
+        assert!(glob_matches("?ello", "hello"));
+        assert!(!glob_matches("?.txt", "ab.txt"));
+    }
+
+    #[test]
+    fn glob_matches_mixed() {
+        assert!(glob_matches("*.exe", "dm.exe"));
+        assert!(glob_matches("lib*.a", "libkernel.a"));
+        assert!(glob_matches("*.dll", "mylib.dll"));
+        assert!(!glob_matches("*.dll", "mylib.exe"));
+    }
+
+    #[test]
+    fn build_cmd_returns_command() {
+        assert!(build_cmd(ServiceLanguage::Rust, false).is_some());
+        assert!(build_cmd(ServiceLanguage::Go, true).is_some());
+        assert!(
+            build_cmd(ServiceLanguage::Rust, false)
+                .unwrap()
+                .contains("cargo")
+        );
+        assert!(
+            build_cmd(ServiceLanguage::Go, true)
+                .unwrap()
+                .contains("ldflags")
+        );
+    }
+}
