@@ -15,6 +15,7 @@ serde_json.workspace = true
 dm-vcs.workspace = true
 dm-analysis.workspace = true
 dm-deploy.workspace = true
+dm-lua.workspace = true
 dm-installer.workspace = true
 tokio.workspace = true
 clap.workspace = true

@@ -34,5 +34,24 @@ pub async fn run(args: InstallArgs) -> DmResult<()> {
     } else {
         println_styled("• каталог уже был в PATH", crate::output::dim_style());
     }
+
+    // Также создаём копию dmx (шорткат для алиасов: dmx <name>).
+    let dmx_path = result
+        .bin_path
+        .parent()
+        .map(|p| p.join(if cfg!(windows) { "dmx.exe" } else { "dmx" }));
+    if let Some(dmx) = dmx_path {
+        if std::fs::copy(&result.bin_path, &dmx).is_ok() {
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let _ = std::fs::set_permissions(&dmx, std::fs::Permissions::from_mode(0o755));
+            }
+            println_styled(
+                &format!("✓ шорткат алиасов: {}", dmx.display()),
+                success_style(),
+            );
+        }
+    }
     Ok(())
 }

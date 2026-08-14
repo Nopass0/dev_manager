@@ -44,6 +44,10 @@ pub enum ServiceLanguage {
     Nextjs,
     /// Remix (React framework).
     Remix,
+    /// Java
+    Java,
+    /// Kotlin
+    Kotlin,
     /// Прочий/неизвестный стек — команда запуска задаётся явно в `run`.
     Other,
 }
@@ -69,6 +73,9 @@ impl ServiceLanguage {
             ServiceLanguage::Vite => Some("npm run dev"),
             ServiceLanguage::Nextjs => Some("npm run dev"),
             ServiceLanguage::Remix => Some("npm run dev"),
+            ServiceLanguage::Java => Some("gradle run"),
+            ServiceLanguage::Kotlin => Some("gradle run"),
+
             ServiceLanguage::Other => None,
         }
     }
@@ -90,6 +97,8 @@ impl ServiceLanguage {
             ServiceLanguage::Vite => "vite",
             ServiceLanguage::Nextjs => "nextjs",
             ServiceLanguage::Remix => "remix",
+            ServiceLanguage::Java => "java",
+            ServiceLanguage::Kotlin => "kotlin",
             ServiceLanguage::Other => "other",
         }
     }
@@ -115,6 +124,8 @@ impl ServiceLanguage {
             ServiceLanguage::Vite | ServiceLanguage::Nextjs | ServiceLanguage::Remix => {
                 &["ts", "tsx", "js", "jsx"]
             }
+            ServiceLanguage::Java => &["java"],
+            ServiceLanguage::Kotlin => &["kt"],
             ServiceLanguage::Other => &[],
         }
     }

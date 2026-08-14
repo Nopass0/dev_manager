@@ -23,6 +23,7 @@ members = [
     "crates/dm-analysis",
     "crates/dm-deploy",
     "crates/dm-installer",
+    "crates/dm-lua",
 ]
 
 [workspace.package]
@@ -76,6 +77,7 @@ dm-vcs       = { path = "crates/dm-vcs" }
 dm-analysis  = { path = "crates/dm-analysis" }
 dm-deploy    = { path = "crates/dm-deploy" }
 dm-installer = { path = "crates/dm-installer" }
+dm-lua       = { path = "crates/dm-lua" }
 
 # Оптимизируем только то, что отдаём пользователям; зависимости — быстро.
 [profile.release]

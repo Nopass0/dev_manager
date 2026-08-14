@@ -34,6 +34,7 @@ pub mod kill;
 pub mod lint;
 pub mod list;
 pub mod logs;
+pub mod lua_cmd;
 pub mod new;
 pub mod open;
 pub mod ping;

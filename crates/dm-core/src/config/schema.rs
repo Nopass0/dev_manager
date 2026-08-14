@@ -207,6 +207,45 @@ pub struct BuildStage {
     /// (пусто = корень output_dir).
     #[serde(default)]
     pub dest_subdir: String,
+    /// Этапы, которые должны успешно завершиться до этого (по имени).
+    /// Обеспечивает порядок: lib → dll → app.
+    #[serde(default)]
+    pub depends_on: Vec<String>,
+    /// Lua-скрипт, выполняемый ПОСЛЕ успешной сборки этапа (путь к .lua).
+    #[serde(default)]
+    pub on_success: Option<String>,
+    /// Lua-скрипт, выполняемый при ПРОВАЛЕ этапа (путь к .lua).
+    #[serde(default)]
+    pub on_failure: Option<String>,
+}
+
+/// Хуки жизненного цикла сервиса (Lua-скрипты или команды).
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(deny_unknown_fields, default)]
+pub struct HooksConfig {
+    /// Lua-скрипт или shell-команда ПЕРЕД запуском сервиса.
+    /// Для Lua укажите путь к .lua файлу; для shell — команду.
+    #[serde(default)]
+    pub before_start: Vec<String>,
+    /// Lua-скрипт ПОСЛЕ успешного health-check.
+    #[serde(default)]
+    pub after_start: Vec<String>,
+    /// Lua-скрипт ПОСЛЕ сборки.
+    #[serde(default)]
+    pub after_build: Vec<String>,
+    /// Lua-скрипт ПОСЛЕ тестов (запускается независимо от результата).
+    #[serde(default)]
+    pub after_test: Vec<String>,
+    /// Проверять/устанавливать зависимости перед каждым запуском.
+    /// Выполняет `install_cmd` если файл-маркер dependencies_file отсутствует.
+    #[serde(default)]
+    pub check_deps: bool,
+    /// Команда установки зависимостей (например, `npm ci`, `cargo fetch`).
+    #[serde(default)]
+    pub install_cmd: Option<String>,
+    /// Файл-маркер наличия зависимостей (например, `node_modules`, `Cargo.lock`).
+    #[serde(default)]
+    pub deps_marker: Option<String>,
 }
 
 fn default_version() -> u32 {
@@ -308,6 +347,10 @@ pub struct ServiceConfig {
     /// Политика перезапуска при падении.
     #[serde(default)]
     pub restart_policy: RestartPolicy,
+
+    /// Хуки жизненного цикла: Lua-скрипты на события + проверка зависимостей.
+    #[serde(default)]
+    pub hooks: HooksConfig,
 
     /// Команды, выполняемые ПЕРЕД запуском основного процесса
     /// (например, миграции, генерация кода).

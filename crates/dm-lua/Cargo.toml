@@ -1,0 +1,12 @@
+[package]
+name = "dm-lua"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Lua-скриптинг для Dev Manager: API автоматизации, хуки, тесты."
+
+[dependencies]
+dm-core = { path = "../dm-core" }
+mlua = { version = "0.9", features = ["lua54", "vendored"] }
+serde.workspace = true

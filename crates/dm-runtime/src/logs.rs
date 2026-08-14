@@ -106,6 +106,8 @@ pub fn service_color(language: ServiceLanguage) -> &'static str {
         ServiceLanguage::Vite => "\x1b[95m", // bright magenta
         ServiceLanguage::Nextjs => "\x1b[97m", // bright white
         ServiceLanguage::Remix => "\x1b[96m", // bright cyan
+        ServiceLanguage::Java => "\x1b[37m", // white
+        ServiceLanguage::Kotlin => "\x1b[37m", // white
         ServiceLanguage::Other => "\x1b[37m", // white
     }
 }
