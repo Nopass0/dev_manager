@@ -49,6 +49,7 @@ use mlua::{Lua, Result as LuaResult, Table};
 ///
 /// Возвращает готовый к использованию `Lua` instance со всеми модулями:
 /// `os` (расширенный), `fs`, `http`, `log`, `dm`, `auto`.
+pub mod auto;
 pub mod ctx;
 pub mod modules;
 
@@ -66,6 +67,7 @@ pub fn new_engine_with_root(project_root: Option<std::path::PathBuf>) -> LuaResu
     register_dm(&lua)?;
     ctx::register_all(&lua, project_root)?;
     modules::register_all(&lua)?;
+    auto::register(&lua)?;
     Ok(lua)
 }
 

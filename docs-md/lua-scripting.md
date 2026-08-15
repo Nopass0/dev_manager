@@ -420,3 +420,122 @@ str.contains("hello", "ell")         -- true
 str.upper("abc")                     -- "ABC"
 str.lower("XYZ")                     -- "xyz"
 ```
+
+## auto — автоматизация UI (клавиатура, мышь, скриншоты)
+
+### Клавиатура
+
+```lua
+-- Нажать клавишу:
+auto.key_press("enter")
+auto.key_press("a")
+auto.key_press("escape")
+
+-- Напечатать текст (как с клавиатуры):
+auto.type_text("Hello, World!")
+
+-- Зажать/отпустить (для кастомных комбинаций):
+auto.key_down("shift")
+auto.key_press("a")         -- получится "A"
+auto.key_up("shift")
+
+-- Горячие клавиши (модификаторы + клавиша):
+auto.hotkey({"ctrl"}, "s")           -- Ctrl+S
+auto.hotkey({"ctrl", "shift"}, "t")  -- Ctrl+Shift+T
+auto.hotkey({"alt"}, "f4")           -- Alt+F4
+```
+
+**Поддерживаемые клавиши**: a-z, 0-9, enter, escape, tab, space, backspace,
+delete, home, end, pageup, pagedown, f1-f12, стрелки (up/down/left/right),
+ctrl, shift, alt, win/meta/cmd, capslock.
+
+### Мышь
+
+```lua
+-- Переместить курсор:
+auto.mouse_move(500, 300)
+
+-- Клик (левой кнопкой):
+auto.click(500, 300)         -- по координатам
+auto.click()                  -- в текущей позиции
+
+-- Двойной клик:
+auto.double_click(500, 300)
+
+-- Правый клик (контекстное меню):
+auto.right_click(500, 300)
+
+-- Перетаскивание (drag & drop):
+auto.drag(100, 100, 400, 300)
+
+-- Прокрутка (отрицательное = вверх):
+auto.scroll(3)     -- вниз на 3 шага
+auto.scroll(-5)    -- вверх
+
+-- Зажать/отпустить кнопку (для кастомного drag):
+auto.mouse_down("left")
+auto.mouse_move(200, 200)
+auto.mouse_up("left")
+
+-- Текущая позиция курсора:
+local pos = auto.mouse_pos()
+print(pos.x, pos.y)
+```
+
+### Скриншоты
+
+```lua
+-- Весь экран:
+auto.screenshot("screenshot.png")
+
+-- Область экрана:
+auto.screenshot_region("region.png", 100, 100, 800, 600)
+```
+
+### Окна
+
+```lua
+-- Список всех окон:
+local windows = auto.windows()
+for _, w in ipairs(windows) do
+    print(w.title, w.x, w.y, w.w, w.h)
+end
+
+-- Найти окно по части заголовка:
+local notepad = auto.find_window("Notepad")
+if notepad.found ~= false then
+    print("Notepad at: " .. notepad.x .. "," .. notepad.y)
+end
+
+-- Активировать окно (вывести на передний план):
+auto.activate_window(notepad)
+```
+
+### Кейс: полный UI-тест приложения
+
+```lua
+-- scripts/ui_test.lua
+-- 1. Запускаем приложение
+local p = proc_io.spawn("notepad")
+dm_os.sleep(2000)
+
+-- 2. Находим окно
+local win = auto.find_window("Notepad")
+assert(win.found ~= false, "Notepad window not found")
+
+-- 3. Активируем и печатаем
+auto.activate_window(win)
+auto.type_text("Hello from dm automation!")
+
+-- 4. Сохраняем (Ctrl+S)
+auto.hotkey({"ctrl"}, "s")
+dm_os.sleep(1000)
+
+-- 5. Скриншот результата
+auto.screenshot("test_result.png")
+log.info("UI test completed, screenshot saved")
+
+-- 6. Закрываем
+auto.hotkey({"alt"}, "f4")
+p.wait()
+```
