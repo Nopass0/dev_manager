@@ -327,3 +327,96 @@ while true do
     dm_os.sleep(5000)  -- каждые 5 секунд
 end
 ```
+
+## proc_io — интерактивные процессы (stdin/stdout)
+
+```lua
+-- Запустить программу с доступом к stdin/stdout:
+local p = proc_io.spawn("my-cli-app")
+
+-- Записать в stdin приложения (ответить на запрос):
+p.write("yes\n")
+
+-- Прочитать строку из stdout (блокирующая):
+local line = p.read_line()
+print("app said: " .. line)
+
+-- Прочитать весь вывод:
+local output = p.read_all()
+
+-- Дождаться завершения (возвращает exit code):
+local code = p.wait()
+
+-- Убить принудительно:
+p.kill()
+```
+
+**Кейс: тестирование CLI-взаимодействия**
+```lua
+local p = proc_io.spawn("./app --interactive")
+local prompt = p.read_line()          -- "Enter name:"
+p.write("Alice")                       -- вводим имя
+local greeting = p.read_line()         -- "Hello, Alice!"
+assert(greeting:find("Alice"), "should greet by name")
+p.wait()
+```
+
+## net — TCP-клиент
+
+```lua
+-- Проверить открыт ли порт:
+if net.port_open("localhost", 8080) then
+    log.info("server is up")
+end
+
+-- Быстрая отправка (fire-and-forget):
+net.tcp_send("localhost", 9090, "PING\n")
+
+-- Полное соединение с send/recv:
+local conn = net.tcp_connect("localhost", 6379)
+conn.send("PING\r\n")
+local response = conn.recv(64)     -- прочитать до 64 байт
+print("redis replied: " .. response)
+conn.close()
+```
+
+**Кейс: тест Redis протокола**
+```lua
+local conn = net.tcp_connect("127.0.0.1", 6379)
+conn.send("SET dm:test hello\r\n")
+conn.send("GET dm:test\r\n")
+local reply = conn.recv(256)
+assert(reply:find("hello"), "GET should return hello")
+conn.close()
+```
+
+## time — время
+
+```lua
+local ts = time.now()          -- Unix timestamp (секунды)
+local ms = time.now_ms()       -- Unix timestamp (миллисекунды)
+
+-- Измерение длительности:
+local start = time.now_ms()
+dm_os.sleep(1500)
+local took = time.elapsed_ms(start)
+assert(took >= 1500, "should take at least 1.5s")
+
+-- Пауза в секундах:
+time.sleep_s(2)  -- 2 секунды
+```
+
+## str — строковые утилиты
+
+```lua
+-- Разбиение:
+local parts = str.split("a,b,c", ",")
+-- parts[1]="a" parts[2]="b" parts[3]="c"
+
+str.trim("  hello  ")               -- "hello"
+str.starts_with("file.lua", "file")  -- true
+str.ends_with("file.lua", ".lua")    -- true
+str.contains("hello", "ell")         -- true
+str.upper("abc")                     -- "ABC"
+str.lower("XYZ")                     -- "xyz"
+```
