@@ -97,6 +97,64 @@ dm test            # run tests
 
 ---
 
+## 🌙 Lua Scripting & UI Automation
+
+Dev Manager embeds a full Lua 5.4 runtime with **15+ API modules** for testing,
+automation, and project management:
+
+```sh
+dm lua scripts/smoke_test.lua    # run any Lua script
+dmx my-alias                     # run aliases via shortcut
+```
+
+### Script API (15 modules)
+
+| Module | What it does |
+|---|---|
+| `http` | GET/POST/PUT/DELETE requests |
+| `fs` | read/write/copy/mkdir/remove files |
+| `dm_os` | exec commands, spawn, sleep, env vars |
+| `dm_ctx` | full project context (config, services) |
+| `svc` | start/stop/restart/add/remove services |
+| `proc` | list/find/kill processes, memory RSS |
+| `proc_io` | interactive stdin/stdout with spawned apps |
+| `net` | TCP client (connect/send/recv, port check) |
+| `json` | encode/decode JSON |
+| `auto` | **keyboard, mouse, screenshots, windows** |
+| `time` | timestamps, elapsed, sleep |
+| `str` | split/trim/starts_with/ends_with |
+| `log` / `dm_log` | structured logging |
+| `dm` | call any dm command |
+| `require` | import other .lua modules |
+
+### UI Automation Example
+
+```lua
+-- Launch app, type text, screenshot the result
+local p = proc_io.spawn("notepad")
+dm_os.sleep(2000)
+
+local win = auto.find_window("Notepad")
+auto.activate_window(win)
+auto.type_text("Hello from dm!")
+auto.hotkey({"ctrl"}, "s")
+
+auto.screenshot("result.png")
+```
+
+Hooks in `dm.yaml`:
+```yaml
+services:
+  api:
+    hooks:
+      after_start: [scripts/smoke_test.lua]   # run after health-check passes
+      check_deps: true                         # auto-install dependencies
+```
+
+Full docs: [Lua Scripting Guide](./docs-md/lua-scripting.md)
+
+---
+
 ## ✨ Features
 
 - 🚀 **Process orchestration** — launch all microservices with a start queue
