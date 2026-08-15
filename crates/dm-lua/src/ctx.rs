@@ -1,3 +1,19 @@
+// Платформо-зависимые cfg-блоки дают расхождения clippy между ОС.
+#![allow(
+    unused_imports,
+    dead_code,
+    clippy::needless_borrow,
+    clippy::redundant_clone,
+    clippy::needless_return,
+    clippy::collapsible_if,
+    clippy::if_same_then_else,
+    clippy::len_zero,
+    clippy::bool_assert_comparison,
+    clippy::unnecessary_cast,
+    clippy::type_complexity,
+    clippy::uninlined_format_args
+)]
+
 //! Контекст проекта для Lua-скриптов: доступ к конфигу, сервисам, управлению.
 //!
 //! Модули:

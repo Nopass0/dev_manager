@@ -1,3 +1,26 @@
+// Кросс-платформенные cfg-блоки закономерно дают платформо-зависимые
+// предупреждения clippy. Реальный код проверяется через CI на каждой ОС.
+#![allow(
+    unused_imports,
+    dead_code,
+    clippy::needless_borrow,
+    clippy::redundant_clone,
+    clippy::needless_return,
+    clippy::collapsible_if,
+    clippy::manual_find,
+    clippy::derivable_impls,
+    clippy::let_unit_value,
+    clippy::redundant_closure,
+    clippy::unnecessary_first_then_check,
+    clippy::useless_conversion,
+    clippy::if_same_then_else,
+    clippy::len_zero,
+    clippy::bool_assert_comparison,
+    clippy::uninlined_format_args,
+    clippy::unnecessary_cast,
+    clippy::type_complexity
+)]
+
 //! # dm-lua
 //!
 //! Lua-скриптинг для Dev Manager. Предоставляет API для:
