@@ -189,3 +189,141 @@ log.info("Build artifacts ready")
 
 Все стандартные возможности Lua 5.4 доступны: `string`, `table`, `math`,
 `os.time`, `pcall`, корутины и т.д. Плюс dm API поверх.
+
+---
+
+# Расширенный API (v2)
+
+## dm_ctx — контекст проекта
+
+```lua
+-- Корень проекта (каталог dm.yaml):
+dm_ctx.root            -- "/path/to/project"
+dm_ctx.config_path     -- "/path/to/project/dm.yaml"
+
+-- Вся конфигурация как Lua-таблица:
+local project = dm_ctx.project()
+print(project.project_name)      -- "my-app"
+print(project.linter.dr)         -- true
+
+-- Список имён сервисов:
+local names = dm_ctx.services()
+for _, name in ipairs(names) do
+    print("service: " .. name)
+end
+
+-- Данные конкретного сервиса:
+local api = dm_ctx.service("api")
+print(api.path)          -- "./services/api"
+print(api.language)      -- "rust"
+print(api.watch)         -- true
+```
+
+## svc — управление сервисами
+
+```lua
+-- Список всех:
+local list = svc.list()
+
+-- Получить данные:
+local api = svc.get("api")
+
+-- Управление жизненным циклом (через dm subprocess):
+svc.start("api")        -- запустить
+svc.stop("api")         -- остановить
+svc.restart("api")      -- перезапустить
+
+-- Добавить сервис (пишет в dm.yaml):
+svc.add("worker", {
+    path = "./worker",
+    language = "go",
+    order = "30"
+})
+
+-- Удалить сервис (удаляет из dm.yaml):
+svc.remove("worker")
+```
+
+## proc — процессы и память
+
+```lua
+-- Список всех процессов:
+local procs = proc.list()
+for _, p in ipairs(procs) do
+    print(p.pid, p.name)
+end
+
+-- Найти PID по имени:
+local pids = proc.find("chrome")
+if #pids > 0 then
+    print("Chrome PID: " .. pids[1])
+end
+
+-- Завершить процесс:
+proc.kill(12345)
+
+-- RSS памяти процесса (МБ, -1 если не удалось):
+local mb = proc.rss(pid)
+if mb > 500 then
+    log.warn("Process using too much memory: " .. mb .. " MB")
+end
+```
+
+## dm_log — логи dm
+
+```lua
+dm_log.info("message")    -- [script:info]
+dm_log.warn("message")    -- [script:warn]
+dm_log.error("message")   -- [script:error]
+dm_log.debug("message")   -- [script:debug]
+```
+
+## json — кодирование/декодирование
+
+```lua
+-- Lua таблица → JSON строка:
+local encoded = json.encode({ name = "test", count = 42 })
+
+-- JSON строка → Lua таблица:
+local data = json.decode('{"users":[{"name":"alice"},{"name":"bob"}]}')
+print(data.users[1].name)  -- "alice"
+print(#data.users)          -- 2
+
+-- Вложенные структуры работают:
+local nested = json.decode('{"a":{"b":{"c":[1,2,3]}}}')
+print(nested.a.b.c[2])  -- 2
+```
+
+## require — импорт модулей
+
+```lua
+-- mylib.lua:
+local M = {}
+function M.greet(name) return "Hello, " .. name end
+return M
+
+-- main.lua:
+local mylib = require("mylib")  -- ищет mylib.lua в cwd и scripts/
+print(mylib.greet("World"))      -- "Hello, World"
+```
+
+Поиск: `<module>.lua` и `scripts/<module>.lua` относительно текущего каталога.
+
+## Комплексный пример: мониторинг и рестарт
+
+```lua
+-- scripts/monitor.lua — следит за памятью и перезапускает
+while true do
+    local pids = proc.find("my-app")
+    if #pids > 0 then
+        local rss = proc.rss(pids[1])
+        if rss > 1000 then  -- > 1GB
+            dm_log.warn("Memory leak detected: " .. rss .. " MB, restarting")
+            proc.kill(pids[1])
+            dm_os.sleep(3000)
+            svc.start("my-app")
+        end
+    end
+    dm_os.sleep(5000)  -- каждые 5 секунд
+end
+```

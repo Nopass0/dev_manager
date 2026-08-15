@@ -4,9 +4,11 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "Lua-скриптинг для Dev Manager: API автоматизации, хуки, тесты."
+description = "Lua-скриптинг для Dev Manager: API автоматизации, хуки, тесты, управление сервисами."
 
 [dependencies]
 dm-core = { path = "../dm-core" }
 mlua = { version = "0.9", features = ["lua54", "vendored"] }
 serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true

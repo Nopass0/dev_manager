@@ -26,13 +26,21 @@ use mlua::{Lua, Result as LuaResult, Table};
 ///
 /// Возвращает готовый к использованию `Lua` instance со всеми модулями:
 /// `os` (расширенный), `fs`, `http`, `log`, `dm`, `auto`.
+pub mod ctx;
+
 pub fn new_engine() -> LuaResult<Lua> {
+    new_engine_with_root(None)
+}
+
+/// Создаёт Lua-интерпретатор с указанным корнем проекта (для dm_ctx).
+pub fn new_engine_with_root(project_root: Option<std::path::PathBuf>) -> LuaResult<Lua> {
     let lua = Lua::new();
     register_os(&lua)?;
     register_fs(&lua)?;
     register_http(&lua)?;
     register_log(&lua)?;
     register_dm(&lua)?;
+    ctx::register_all(&lua, project_root)?;
     Ok(lua)
 }
 
@@ -356,7 +364,14 @@ fn shell_flag() -> &'static str {
     if cfg!(windows) { "/C" } else { "-c" }
 }
 
+#[allow(clippy::all)]
 #[cfg(test)]
+#[allow(
+    clippy::len_zero,
+    clippy::bool_assert_comparison,
+    clippy::needless_return,
+    clippy::uninlined_format_args
+)]
 mod tests {
     use super::*;
 
