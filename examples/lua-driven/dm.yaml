@@ -1,0 +1,42 @@
+# Example: Lua-driven development workflow.
+#
+# This project uses Lua scripts for EVERYTHING:
+# - Build validation (after_build)
+# - Smoke tests (after_start)
+# - Integration tests (custom)
+# - Health monitoring
+#
+# Run: dm setup && dm start
+version: 1
+project_name: lua-driven-app
+
+services:
+  api:
+    path: ./api
+    language: bun
+    run: "bun run dev"
+    health:
+      kind: http
+      url: http://localhost:3000/health
+    hooks:
+      after_start:
+        - scripts/smoke.lua
+      after_build:
+        - scripts/check_artifacts.lua
+      check_deps: true
+      install_cmd: "bun install"
+      deps_marker: "node_modules"
+
+build:
+  output_dir: dist
+  stages:
+    - name: "bundle"
+      source: ./api
+      command: "bun build src/index.ts --outdir ../dist"
+      artifacts: ["*"]
+      on_success: scripts/check_artifacts.lua
+
+aliases:
+  test: "dm lua scripts/integration_test.lua"
+  check: "dm lua scripts/smoke.lua"
+  monitor: "dm lua scripts/monitor.lua"

@@ -51,6 +51,7 @@ use mlua::{Lua, Result as LuaResult, Table};
 /// `os` (расширенный), `fs`, `http`, `log`, `dm`, `auto`.
 pub mod auto;
 pub mod ctx;
+pub mod extra;
 pub mod modules;
 
 pub fn new_engine() -> LuaResult<Lua> {
@@ -68,6 +69,7 @@ pub fn new_engine_with_root(project_root: Option<std::path::PathBuf>) -> LuaResu
     ctx::register_all(&lua, project_root)?;
     modules::register_all(&lua)?;
     auto::register(&lua)?;
+    extra::register_all(&lua)?;
     Ok(lua)
 }
 
