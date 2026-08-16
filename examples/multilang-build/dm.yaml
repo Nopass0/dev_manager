@@ -1,0 +1,53 @@
+# Multi-Language Build Example
+#
+# Builds: Rust library + C shared library + Go application
+# All orchestrated and validated by Lua scripts.
+#
+# Structure:
+#   lib-rust/     → staticlib (libmath.a)
+#   lib-c/        → shared library (libutils.so/dll)
+#   app-go/       → executable (uses both libs via FFI/CGO)
+#   scripts/      → Lua build/test/validation scripts
+#   dist/         → clean output (only final artifacts)
+version: 1
+project_name: multilang-app
+
+services:
+  app:
+    path: ./app-go
+    language: go
+    run: "go run ."
+    depends_on: []
+
+build:
+  output_dir: dist
+  clean: true
+  stages:
+    - name: "1. Rust library"
+      source: ./lib-rust
+      command: "cargo build --release"
+      artifacts: ["target/release/libmath.a"]
+      dest_subdir: "libs"
+      on_success: scripts/validate_lib.lua
+
+    - name: "2. C shared library"
+      source: ./lib-c
+      command: "cc -shared -fPIC utils.c -o libutils.so"
+      artifacts: ["libutils.so"]
+      dest_subdir: "libs"
+      depends_on: ["1. Rust library"]
+      on_success: scripts/validate_lib.lua
+
+    - name: "3. Go application"
+      source: ./app-go
+      command: "go build -o app ."
+      artifacts: ["app"]
+      dest_subdir: "bin"
+      depends_on: ["2. C shared library"]
+      on_success: scripts/final_check.lua
+
+aliases:
+  build: "dm build"
+  test: "dm lua scripts/test_all.lua"
+  package: "dm lua scripts/package.lua"
+  verify: "dm lua scripts/verify_dist.lua"

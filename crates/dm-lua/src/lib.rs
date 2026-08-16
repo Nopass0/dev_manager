@@ -205,6 +205,59 @@ fn register_fs(lua: &Lua) -> LuaResult<()> {
     })?;
     fs.set("remove", remove)?;
 
+    // fs.zip(source_dir, zip_path) — архивировать каталог.
+    let zip_fn = lua.create_function(|_, (src, dst): (String, String)| {
+        #[cfg(windows)]
+        let out = std::process::Command::new("powershell")
+            .args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                &format!(
+                    "Compress-Archive -Path '{}' -DestinationPath '{}' -Force",
+                    src, dst
+                ),
+            ])
+            .output();
+        #[cfg(not(windows))]
+        let out = std::process::Command::new("zip")
+            .args(["-r", &dst, &src])
+            .output();
+        match out {
+            Ok(o) if o.status.success() => Ok(true),
+            Ok(_) => Ok(false),
+            Err(_) => Ok(false),
+        }
+    })?;
+    fs.set("zip", zip_fn)?;
+
+    // fs.unzip(zip_path, dest_dir) — распаковать архив.
+    let unzip_fn = lua.create_function(|_, (src, dst): (String, String)| {
+        let _ = std::fs::create_dir_all(&dst);
+        #[cfg(windows)]
+        let out = std::process::Command::new("powershell")
+            .args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                &format!(
+                    "Expand-Archive -Path '{}' -DestinationPath '{}' -Force",
+                    src, dst
+                ),
+            ])
+            .output();
+        #[cfg(not(windows))]
+        let out = std::process::Command::new("unzip")
+            .args(["-o", &src, "-d", &dst])
+            .output();
+        match out {
+            Ok(o) if o.status.success() => Ok(true),
+            Ok(_) => Ok(false),
+            Err(_) => Ok(false),
+        }
+    })?;
+    fs.set("unzip", unzip_fn)?;
+
     lua.globals().set("fs", fs)?;
     Ok(())
 }
@@ -497,4 +550,12 @@ mod tests {
         assert!(run_script(&tmp).is_err());
         let _ = std::fs::remove_file(&tmp);
     }
+}
+
+/// Проверяет синтаксис Lua-кода без выполнения (для --dry-run).
+pub fn check_syntax(code: &str) -> LuaResult<()> {
+    let lua = Lua::new();
+    let chunk = lua.load(code);
+    chunk.into_function()?;
+    Ok(())
 }

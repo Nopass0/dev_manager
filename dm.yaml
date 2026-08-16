@@ -1,7 +1,6 @@
-# Dev Manager — собственный конфиг (dogfooding: dm собирается через dm).
+# Dev Manager — self-hosting config (dm builds dm via dm + Lua)
 version: 1
 project_name: dev_manager
-env_file: .env
 
 services:
   dm:
@@ -11,28 +10,32 @@ services:
     watch: false
     restart_on_change: false
 
-defaults:
-  watch: true
-
 build:
   output_dir: dist
   clean: true
   stages:
-    - name: "build dm (debug)"
+    - name: "1. Test suite"
       source: .
-      command: "cargo build --workspace"
-      artifacts:
-        - "target/debug/dm.exe"
-        - "target/debug/dm"
-      dest_subdir: ""
+      command: "cargo test --workspace 2>&1"
+      artifacts: []
 
-linter:
-  dr: true
-  kiss: true
-  unused_code: true
-  duplicates: true
+    - name: "2. Clippy check"
+      source: .
+      command: "cargo clippy --workspace --all-targets -- -D warnings 2>&1"
+      artifacts: []
+      depends_on: ["1. Test suite"]
+
+    - name: "3. Build release"
+      source: .
+      command: "cargo build --release --workspace 2>&1"
+      artifacts:
+        - "target/release/dm.exe"
+      dest_subdir: ""
+      depends_on: ["2. Clippy check"]
+      on_success: scripts/package.lua
 
 aliases:
-  t: "cargo test --workspace"
-  r: "cargo run --"
-  c: "cargo clippy --workspace -- -D warnings"
+  t: "dm lua scripts/check.lua"
+  build: "dm build"
+  test: "cargo test --workspace"
+  lint: "cargo clippy --workspace -- -D warnings"
