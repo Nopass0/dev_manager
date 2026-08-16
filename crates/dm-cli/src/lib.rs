@@ -144,7 +144,14 @@ pub enum Command {
     /// Локальная kanban-доска задач (HTTP-сервер :11001).
     Board { port: Option<u16> },
     /// Выполнить Lua-скрипт с dm API (автоматизация, тесты).
-    Lua { script: String },
+    Lua {
+        /// Lua-скрипт файл ИЛИ inline код с -e.
+        #[arg(required_unless_present = "eval")]
+        script: Option<String>,
+        /// Выполнить inline Lua код: dm lua -e 'log.info("hi")'.
+        #[arg(short = 'e', long)]
+        eval: Option<String>,
+    },
     /// Запустить алиас из dm.yaml (короткая форма: dmx <name>).
     X { name: String, args: Vec<String> },
     /// Управление dm.yaml из CLI.
@@ -235,7 +242,9 @@ pub async fn run(cli: Cli) -> DmResult<()> {
         Command::Hooks(args) => commands::hooks::run(args).await,
         Command::Watch(args) => commands::watch::run(args).await,
         Command::Board { port } => commands::board_cmd::run(port).await,
-        Command::Lua { script } => commands::lua_cmd::run(&script).await,
+        Command::Lua { script, eval } => {
+            commands::lua_cmd::run(script.as_deref(), eval.as_deref()).await
+        }
         Command::X { name, args } => commands::alias::run(&name, &args).await,
         Command::Config(args) => commands::config::run(args).await,
         Command::New(args) => commands::new::run(args).await,
