@@ -72,6 +72,7 @@ pub fn new_engine_with_root(project_root: Option<std::path::PathBuf>) -> LuaResu
     auto::register(&lua)?;
     extra::register_all(&lua)?;
     enrich::register(&lua)?;
+    enrich::register_sort(&lua)?;
     Ok(lua)
 }
 

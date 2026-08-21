@@ -402,6 +402,119 @@ fn register_util(lua: &Lua) -> LuaResult<()> {
     Ok(())
 }
 
+/// Регистрирует модуль sort (quicksort, mergesort, binary search).
+pub fn register_sort(lua: &Lua) -> LuaResult<()> {
+    let sort_code = r#"
+    sort = {}
+
+    -- sort.quick(t, cmp) — быстрая сортировка (возвращает новую таблицу).
+    function sort.quick(t, cmp)
+        cmp = cmp or function(a, b) return a < b end
+        if #t <= 1 then return table.copy(t) end
+        local pivot = t[math.floor(#t / 2) + 1]
+        local left, equal, right = {}, {}, {}
+        for _, v in ipairs(t) do
+            if cmp(v, pivot) then table.insert(left, v)
+            elseif v == pivot then table.insert(equal, v)
+            else table.insert(right, v) end
+        end
+        local result = sort.quick(left, cmp)
+        for _, v in ipairs(equal) do table.insert(result, v) end
+        for _, v in ipairs(sort.quick(right, cmp)) do table.insert(result, v) end
+        return result
+    end
+
+    -- sort.merge(t, cmp) — сортировка слиянием.
+    function sort.merge(t, cmp)
+        cmp = cmp or function(a, b) return a < b end
+        if #t <= 1 then return table.copy(t) end
+        local mid = math.floor(#t / 2)
+        local left = sort.merge(table.slice(t, 1, mid), cmp)
+        local right = sort.merge(table.slice(t, mid + 1, #t), cmp)
+        local result = {}
+        local i, j = 1, 1
+        while i <= #left and j <= #right do
+            if cmp(left[i], right[j]) then
+                table.insert(result, left[i]); i = i + 1
+            else
+                table.insert(result, right[j]); j = j + 1
+            end
+        end
+        while i <= #left do table.insert(result, left[i]); i = i + 1 end
+        while j <= #right do table.insert(result, right[j]); j = j + 1 end
+        return result
+    end
+
+    -- sort.insertion(t, cmp) — сортировка вставками (для малых массивов).
+    function sort.insertion(t, cmp)
+        cmp = cmp or function(a, b) return a < b end
+        local result = table.copy(t)
+        for i = 2, #result do
+            local key = result[i]
+            local j = i - 1
+            while j >= 1 and cmp(key, result[j]) do
+                result[j + 1] = result[j]
+                j = j - 1
+            end
+            result[j + 1] = key
+        end
+        return result
+    end
+
+    -- sort.binary_search(t, value, cmp) — бинарный поиск (возвращает индекс или nil).
+    function sort.binary_search(t, value, cmp)
+        cmp = cmp or function(a, b) return a < b end
+        local lo, hi = 1, #t
+        while lo <= hi do
+            local mid = math.floor((lo + hi) / 2)
+            if t[mid] == value then return mid
+            elseif cmp(t[mid], value) then lo = mid + 1
+            else hi = mid - 1 end
+        end
+        return nil
+    end
+
+    -- sort.unique(t) — убрать дубликаты.
+    function sort.unique(t)
+        local seen = {}
+        local result = {}
+        for _, v in ipairs(t) do
+            if not seen[v] then
+                seen[v] = true
+                table.insert(result, v)
+            end
+        end
+        return result
+    end
+
+    -- sort.min(t), sort.max(t) — минимум/максимум.
+    function sort.min(t)
+        local m = t[1]
+        for _, v in ipairs(t) do if v < m then m = v end end
+        return m
+    end
+
+    function sort.max(t)
+        local m = t[1]
+        for _, v in ipairs(t) do if v > m then m = v end end
+        return m
+    end
+
+    -- sort.sum(t), sort.avg(t) — сумма/среднее.
+    function sort.sum(t)
+        local s = 0
+        for _, v in ipairs(t) do s = s + v end
+        return s
+    end
+
+    function sort.avg(t)
+        return sort.sum(t) / #t
+    end
+    "#;
+    lua.load(sort_code).exec()?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
@@ -510,3 +623,5 @@ mod tests {
         assert!(uuid.chars().filter(|c| *c == '-').count() == 4);
     }
 }
+
+// ==================== sort: быстрые сортировки ====================
