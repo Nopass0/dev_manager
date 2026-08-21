@@ -22,10 +22,29 @@ pub async fn run(script: Option<&str>, eval: Option<&str>, dry_run: bool) -> DmR
             )));
         } else {
             if has_stripped_quotes(s) {
+                println_styled("", crate::output::dim_style());
+                println_styled("PowerShell stripped your quotes!", warn_style());
+                println_styled("", crate::output::dim_style());
                 println_styled(
-                    "Hint: PowerShell strips inner quotes. Use: dm lua -e \"print('text')\"",
+                    "  Your input:  dm lua 'print(x, \"text\")'",
+                    crate::output::dim_style(),
+                );
+                println_styled(
+                    "  Received:    print(x, text)          ← quotes missing!",
+                    crate::output::dim_style(),
+                );
+                println_styled("", crate::output::dim_style());
+                println_styled(
+                    "  FIX - use single quotes inside double quotes:",
                     warn_style(),
                 );
+                println_styled("  dm lua -e \"print('hello')\"", success_style());
+                println_styled("", crate::output::dim_style());
+                println_styled(
+                    "  Or for scripts with double quotes, use a .lua file instead.",
+                    crate::output::dim_style(),
+                );
+                println_styled("", crate::output::dim_style());
             }
             s.to_string()
         }

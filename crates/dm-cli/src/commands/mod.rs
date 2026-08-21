@@ -38,6 +38,7 @@ pub mod lua_cmd;
 pub mod new;
 pub mod open;
 pub mod ping;
+pub mod pkg;
 pub mod ports;
 pub mod push;
 pub mod refs;
@@ -401,4 +402,16 @@ pub fn load_project_config() -> DmResult<(Config, PathBuf)> {
         .unwrap_or_else(|| PathBuf::from("."));
     let config = load_resolved_config(&config_path, None)?;
     Ok((config, root))
+}
+
+/// Аргументы `dm pkg`.
+#[derive(Debug, Clone, clap::Args)]
+pub struct PkgArgs {
+    /// Действие: add | remove | update | list | exec.
+    pub action: String,
+    /// Имя пакета (для add/remove) или команда (для exec).
+    pub package: Option<String>,
+    /// Сервис (опущен = все).
+    #[arg(long)]
+    pub service: Option<String>,
 }

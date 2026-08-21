@@ -141,6 +141,8 @@ pub enum Command {
     Hooks(commands::HooksArgs),
     /// Запускать команду при изменении файлов (универсальный watcher-runner).
     Watch(commands::WatchArgs),
+    /// Пакетный менеджер: dm pkg add|remove|update|list|exec
+    Pkg(commands::PkgArgs),
     /// Локальная kanban-доска задач (HTTP-сервер :11001).
     Board { port: Option<u16> },
     /// Выполнить Lua-скрипт с dm API (автоматизация, тесты).
@@ -241,6 +243,7 @@ pub async fn run(cli: Cli) -> DmResult<()> {
         Command::Format => commands::format::run().await,
         Command::Hooks(args) => commands::hooks::run(args).await,
         Command::Watch(args) => commands::watch::run(args).await,
+        Command::Pkg(args) => commands::pkg::run(args).await,
         Command::Board { port } => commands::board_cmd::run(port).await,
         Command::Lua {
             script,
