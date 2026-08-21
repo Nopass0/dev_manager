@@ -73,7 +73,244 @@ pub fn new_engine_with_root(project_root: Option<std::path::PathBuf>) -> LuaResu
     extra::register_all(&lua)?;
     enrich::register(&lua)?;
     enrich::register_sort(&lua)?;
+    register_bootstrap(&lua)?;
     Ok(lua)
+}
+
+/// Регистрирует дополнительные модули через чистый Lua (максимально надёжно).
+fn register_bootstrap(lua: &Lua) -> LuaResult<()> {
+    let bootstrap = r#"
+-- ==================== math extensions ====================
+math.pow = function(base, exp) return base ^ exp end
+math.round = function(x) return math.floor(x + 0.5) end
+math.clamp = function(x, min, max) return math.max(min, math.min(max, x)) end
+math.lerp = function(a, b, t) return a + (b - a) * t end
+math.sign = function(x) if x > 0 then return 1 elseif x < 0 then return -1 else return 0 end end
+
+-- ==================== table extensions ====================
+table.map = function(t, fn)
+    local result = {}
+    for k, v in pairs(t) do result[k] = fn(v) end
+    return result
+end
+
+table.filter = function(t, fn)
+    local result = {}
+    for _, v in ipairs(t) do
+        if fn(v) then table.insert(result, v) end
+    end
+    return result
+end
+
+table.reduce = function(t, fn, init)
+    local acc = init
+    for _, v in ipairs(t) do acc = fn(acc, v) end
+    return acc
+end
+
+table.each = function(t, fn)
+    for _, v in ipairs(t) do fn(v) end
+end
+
+table.contains = function(t, val)
+    for _, v in pairs(t) do
+        if v == val then return true end
+    end
+    return false
+end
+
+table.length = function(t)
+    local n = 0
+    for _ in pairs(t) do n = n + 1 end
+    return n
+end
+
+table.merge = function(t1, t2)
+    local result = {}
+    for k, v in pairs(t1) do result[k] = v end
+    for k, v in pairs(t2) do result[k] = v end
+    return result
+end
+
+table.copy = function(t)
+    local result = {}
+    for k, v in pairs(t) do result[k] = v end
+    return result
+end
+
+table.keys = function(t)
+    local result = {}
+    for k in pairs(t) do table.insert(result, k) end
+    return result
+end
+
+table.values = function(t)
+    local result = {}
+    for _, v in pairs(t) do table.insert(result, v) end
+    return result
+end
+
+table.reverse = function(t)
+    local result = {}
+    for i = #t, 1, -1 do table.insert(result, t[i]) end
+    return result
+end
+
+table.slice = function(t, start, stop)
+    local result = {}
+    for i = start, math.min(stop or #t, #t) do
+        table.insert(result, t[i])
+    end
+    return result
+end
+
+-- ==================== sort ====================
+sort = {}
+
+sort.quick = function(t, cmp)
+    cmp = cmp or function(a, b) return a < b end
+    if #t <= 1 then return table.copy(t) end
+    local pivot = t[math.floor(#t / 2) + 1]
+    local left, equal, right = {}, {}, {}
+    for _, v in ipairs(t) do
+        if cmp(v, pivot) then table.insert(left, v)
+        elseif v == pivot then table.insert(equal, v)
+        else table.insert(right, v) end
+    end
+    local result = sort.quick(left, cmp)
+    for _, v in ipairs(equal) do table.insert(result, v) end
+    for _, v in ipairs(sort.quick(right, cmp)) do table.insert(result, v) end
+    return result
+end
+
+sort.merge = function(t, cmp)
+    cmp = cmp or function(a, b) return a < b end
+    if #t <= 1 then return table.copy(t) end
+    local mid = math.floor(#t / 2)
+    local left = sort.merge(table.slice(t, 1, mid), cmp)
+    local right = sort.merge(table.slice(t, mid + 1, #t), cmp)
+    local result = {}
+    local i, j = 1, 1
+    while i <= #left and j <= #right do
+        if cmp(left[i], right[j]) then
+            table.insert(result, left[i]); i = i + 1
+        else
+            table.insert(result, right[j]); j = j + 1
+        end
+    end
+    while i <= #left do table.insert(result, left[i]); i = i + 1 end
+    while j <= #right do table.insert(result, right[j]); j = j + 1 end
+    return result
+end
+
+sort.insertion = function(t, cmp)
+    cmp = cmp or function(a, b) return a < b end
+    local result = table.copy(t)
+    for i = 2, #result do
+        local key = result[i]
+        local j = i - 1
+        while j >= 1 and cmp(key, result[j]) do
+            result[j + 1] = result[j]
+            j = j - 1
+        end
+        result[j + 1] = key
+    end
+    return result
+end
+
+sort.binary_search = function(t, value, cmp)
+    cmp = cmp or function(a, b) return a < b end
+    local lo, hi = 1, #t
+    while lo <= hi do
+        local mid = math.floor((lo + hi) / 2)
+        if t[mid] == value then return mid
+        elseif cmp(t[mid], value) then lo = mid + 1
+        else hi = mid - 1 end
+    end
+    return nil
+end
+
+sort.unique = function(t)
+    local seen, result = {}, {}
+    for _, v in ipairs(t) do
+        if not seen[v] then
+            seen[v] = true
+            table.insert(result, v)
+        end
+    end
+    return result
+end
+
+sort.min = function(t)
+    local m = t[1]
+    for _, v in ipairs(t) do if v < m then m = v end end
+    return m
+end
+
+sort.max = function(t)
+    local m = t[1]
+    for _, v in ipairs(t) do if v > m then m = v end end
+    return m
+end
+
+sort.sum = function(t)
+    local s = 0
+    for _, v in ipairs(t) do s = s + v end
+    return s
+end
+
+sort.avg = function(t)
+    return sort.sum(t) / #t
+end
+
+-- ==================== util ====================
+util = {}
+
+util.uuid = function()
+    local template = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
+    return (string.gsub(template, "[xy]", function(c)
+        local v = (c == "x") and math.random(0, 0xf) or math.random(8, 0xb)
+        return string.format("%x", v)
+    end))
+end
+
+math.randomseed(os.time() + os.clock() * 1000)
+
+util.clipboard = function(text)
+    -- Platform-specific clipboard
+    if sys and sys.os == "windows" then
+        local f = io.open("_clip.tmp", "w")
+        if f then f:write(text) f:close() end
+        os.execute("type _clip.tmp | clip >nul 2>&1")
+        os.execute("del _clip.tmp >nul 2>&1")
+        return true
+    end
+    return false
+end
+
+util.download = function(url, filepath)
+    -- Uses curl/PowerShell
+    if sys and sys.os == "windows" then
+        os.execute(string.format(
+            'powershell -NoProfile -Command "Invoke-WebRequest -Uri \'%s\' -OutFile \'%s\' -UseBasicParsing"',
+            url, filepath))
+    else
+        os.execute(string.format("curl -fsSL -o '%s' '%s'", filepath, url))
+    end
+    return true
+end
+
+util.notify = function(title, body)
+    if sys and sys.os == "windows" then
+        os.execute(string.format(
+            'powershell -NoProfile -Command "[console]::beep(800,200)"',
+            title, body))
+    end
+    return true
+end
+"#;
+    lua.load(bootstrap).set_name("dm_bootstrap").exec()?;
+    Ok(())
 }
 
 /// Выполняет Lua-скрипт из файла с полным dm API.
