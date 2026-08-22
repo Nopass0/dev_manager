@@ -274,7 +274,7 @@ util.uuid = function()
     end))
 end
 
-math.randomseed(os.time() + os.clock() * 1000)
+math.randomseed(math.floor(os.time() + os.clock() * 1000))
 
 util.clipboard = function(text)
     -- Platform-specific clipboard
