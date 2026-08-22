@@ -263,6 +263,88 @@ sort.avg = function(t)
     return sort.sum(t) / #t
 end
 
+-- ==================== base64 ====================
+base64 = {}
+
+local B64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+local B64_LOOKUP = {}
+for i = 1, #B64_CHARS do
+    B64_LOOKUP[B64_CHARS:sub(i, i)] = i - 1
+end
+
+function base64.encode(data)
+    local out = {}
+    for i = 1, #data, 3 do
+        local a, b, c = data:byte(i), data:byte(i + 1) or 0, data:byte(i + 2) or 0
+        local n = a * 65536 + b * 256 + c
+        local b1 = math.floor(n / 262144) % 64
+        local b2 = math.floor(n / 4096) % 64
+        local b3 = math.floor(n / 64) % 64
+        local b4 = n % 64
+        table.insert(out, B64_CHARS:sub(b1 + 1, b1 + 1))
+        table.insert(out, B64_CHARS:sub(b2 + 1, b2 + 1))
+        if data:byte(i + 1) then
+            table.insert(out, B64_CHARS:sub(b3 + 1, b3 + 1))
+        else
+            table.insert(out, "=")
+        end
+        if data:byte(i + 2) then
+            table.insert(out, B64_CHARS:sub(b4 + 1, b4 + 1))
+        else
+            table.insert(out, "=")
+        end
+    end
+    return table.concat(out)
+end
+
+function base64.decode(data)
+    data = data:gsub("=+$", "")
+    local out = {}
+    local buf, bits = 0, 0
+    for c in data:gmatch("[%w+%-/]") do
+        local val = B64_LOOKUP[c]
+        if not val then error("invalid base64: " .. c) end
+        buf = buf * 64 + val
+        bits = bits + 6
+        if bits >= 8 then
+            bits = bits - 8
+            local byte = math.floor(buf / 2 ^ bits) % 256
+            table.insert(out, string.char(byte))
+        end
+    end
+    return table.concat(out)
+end
+
+-- ==================== hash ====================
+hash = {}
+
+function hash.fnv1a(data)
+    -- FNV-1a с 32-bit (работает в Lua number precision)
+    local h = 2166136261
+    for i = 1, #data do
+        h = (h ~ data:byte(i)) & 0xFFFFFFFF
+        h = (h * 16777619) & 0xFFFFFFFF
+    end
+    return string.format("%08x", h)
+end
+
+function hash.fnv1(data)
+    local h = 2166136261
+    for i = 1, #data do
+        h = (h * 16777619) & 0xFFFFFFFF
+        h = (h ~ data:byte(i)) & 0xFFFFFFFF
+    end
+    return string.format("%08x", h)
+end
+
+function hash.checksum(data)
+    local sum = 0
+    for i = 1, #data do
+        sum = ((sum + data:byte(i)) * 31) & 0xFFFFFFFF
+    end
+    return string.format("%08x", sum)
+end
+
 -- ==================== util ====================
 util = {}
 
