@@ -99,7 +99,7 @@ dm test            # run tests
 
 ## 🌙 Lua Scripting & UI Automation
 
-Dev Manager embeds a full Lua 5.4 runtime with **15+ API modules** for testing,
+Dev Manager embeds a full Lua 5.4 runtime with **24 API modules** for testing,
 automation, and project management:
 
 ```sh
@@ -107,7 +107,7 @@ dm lua scripts/smoke_test.lua    # run any Lua script
 dmx my-alias                     # run aliases via shortcut
 ```
 
-### Script API (15 modules)
+### Script API (24 modules)
 
 | Module | What it does |
 |---|---|
@@ -123,9 +123,18 @@ dmx my-alias                     # run aliases via shortcut
 | `auto` | **keyboard, mouse, screenshots, windows** |
 | `time` | timestamps, elapsed, sleep |
 | `str` | split/trim/starts_with/ends_with |
-| `log` / `dm_log` | structured logging |
+| `log` | structured logging |
+| `dm_log` | project-aware structured logging |
 | `dm` | call any dm command |
 | `require` | import other .lua modules |
+| `regex` | Lua-pattern matching, find, replace and split |
+| `env` | environment variables: get, set, list and check |
+| `sys` | OS, architecture, host and path information |
+| `path` | join, basename, dirname, extension and absolute paths |
+| `base64` | encode and decode data |
+| `hash` | FNV-1, FNV-1a and checksum helpers |
+| `util` | UUID, clipboard, download and notification helpers |
+| `sort` | sorting, searching and aggregate helpers |
 
 ### UI Automation Example
 
